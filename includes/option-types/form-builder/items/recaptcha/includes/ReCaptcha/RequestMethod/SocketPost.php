@@ -63,7 +63,7 @@ class ReCaptchaSocketPost implements ReCaptchaRequestMethod
      * 
      * @param ReCaptchaSocket $socket optional socket, injectable for testing
      */
-    public function __construct(ReCaptchaSocket $socket = null)
+    public function __construct(?ReCaptchaSocket $socket = null)
     {
         if (!is_null($socket)) {
             $this->socket = $socket;
