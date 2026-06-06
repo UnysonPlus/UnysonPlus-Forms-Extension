@@ -52,11 +52,12 @@ class Page_Builder_Contact_Form_Item extends Page_Builder_Item {
 	}
 
 	public function get_value_from_attributes( $attributes ) {
+		$attributes         = is_array( $attributes ) ? $attributes : array();
 		$attributes['type'] = $this->get_type();
 
 		$options = $this->get_shortcode_options();
 		if ( ! empty( $options ) ) {
-			if ( empty( $attributes['atts'] ) ) {
+			if ( empty( $attributes['atts'] ) || ! is_array( $attributes['atts'] ) ) {
 				/**
 				 * The options popup was never opened and there are no attributes.
 				 * Extract options default values.
@@ -89,15 +90,21 @@ class Page_Builder_Contact_Form_Item extends Page_Builder_Item {
 	}
 
 	public function get_shortcode_data( $atts = array() ) {
+		$atts = is_array( $atts ) ? $atts : array();
 
 		$default_width = fw_ext_builder_get_item_width( $this->get_builder_type() );
-		end( $default_width ); // move to the last width (usually it's the biggest)
-		$default_width = key( $default_width );
+
+		if ( is_array( $default_width ) && ! empty( $default_width ) ) {
+			end( $default_width ); // move to the last width (usually it's the biggest)
+			$default_width = key( $default_width );
+		} else {
+			$default_width = '';
+		}
 
 		$return_atts = array(
 			'width' => $default_width
 		);
-		if ( isset( $atts['atts'] ) ) {
+		if ( isset( $atts['atts'] ) && is_array( $atts['atts'] ) ) {
 			$return_atts = array_merge( $return_atts, $atts['atts'] );
 		}
 

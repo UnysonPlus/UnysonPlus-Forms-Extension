@@ -306,9 +306,9 @@ class FW_Option_Type_Form_Builder_Item_Number extends FW_Option_Type_Form_Builde
 		{
 			$attr = array(
 				'type'        => 'text',
-				'name'        => $item['shortcode'],
-				'placeholder' => $options['placeholder'],
-				'value'       => is_null( $input_value ) ? $options['default_value'] : $input_value,
+				'name'        => $item['shortcode'] ?? '',
+				'placeholder' => $options['placeholder'] ?? '',
+				'value'       => is_null( $input_value ) ? ( $options['default_value'] ?? '' ) : $input_value,
 				'id'          => 'id-' . fw_unique_increment(),
 			);
 
@@ -360,7 +360,8 @@ class FW_Option_Type_Form_Builder_Item_Number extends FW_Option_Type_Form_Builde
 	 * {@inheritdoc}
 	 */
 	public function frontend_validate( array $item, $input_value ) {
-		$options = $item['options'];
+		$options     = $item['options'];
+		$input_value = is_scalar( $input_value ) ? (string) $input_value : '';
 
 		$messages = array(
 			'invalid'             => str_replace(

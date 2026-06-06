@@ -109,7 +109,7 @@ class FW_Option_Type_Form_Builder_Item_Recaptcha extends FW_Option_Type_Form_Bui
 
 		$keys = fw_ext( 'forms' )->get_db_settings_option( 'recaptcha-keys' );
 
-		if ( empty( $keys ) ) {
+		if ( empty( $keys ) || empty( $keys['site-key'] ) ) {
 			return '';
 		}
 
@@ -132,11 +132,15 @@ class FW_Option_Type_Form_Builder_Item_Recaptcha extends FW_Option_Type_Form_Bui
 			true
 		);
 
+		$label = ( is_array( $input_value ) && isset( $input_value['label'] ) )
+			? $input_value['label']
+			: __( 'Security Code', 'fw' );
+
 		return fw_render_view(
 			$this->locate_path( '/views/view.php', dirname( __FILE__ ) . '/view.php' ),
 			array(
 				'item'  => $item,
-				'label' => ( isset( $input_value['label'] ) ) ? $input_value['label'] : __( 'Security Code', 'fw' ),
+				'label' => $label,
 				'attr'  => array(
 					'class' => 'form-builder-item-recaptcha',
 				),
@@ -149,35 +153,41 @@ class FW_Option_Type_Form_Builder_Item_Recaptcha extends FW_Option_Type_Form_Bui
 	 */
 	public function frontend_validate( array $item, $input_value ) {
 
-		$mesages = array(
+		$messages = array(
 			'not-configured' => __( 'Could not validate the form', 'fw' ),
 			'not-human'      => __( 'Please fill the recaptcha', 'fw' ),
 		);
 
 		$keys = fw_ext( 'forms' )->get_db_settings_option( 'recaptcha-keys' );
 
-		if ( empty( $keys ) ) {
-			return $mesages['not-configured'];
+		if ( empty( $keys ) || empty( $keys['secret-key'] ) ) {
+			return $messages['not-configured'];
+		}
+
+		if ( ! class_exists( 'ReCaptcha' ) ) {
+			return $messages['not-configured'];
 		}
 
 		$recaptcha = new ReCaptcha(
 			$keys['secret-key'],
-			(function_exists('ini_get') && ini_get('allow_url_fopen')) ? null : new ReCaptchaSocketPost()
+			( function_exists( 'ini_get' ) && ini_get( 'allow_url_fopen' ) )
+				? null
+				: ( class_exists( 'ReCaptchaSocketPost' ) ? new ReCaptchaSocketPost() : null )
 		);
+
 		$gRecaptchaResponse = FW_Request::POST( 'g-recaptcha-response' );
 
 		if ( empty( $gRecaptchaResponse ) ) {
-			return $mesages['not-human'];
+			return $messages['not-human'];
 		}
+
 		$resp = $recaptcha->verify( $gRecaptchaResponse );
 
 		if ( $resp->isSuccess() ) {
-			return false;
-		} else {
-			$errors = $resp->getErrorCodes();
-
-			return $mesages['not-human'];
+			return null;
 		}
+
+		return $messages['not-human'];
 	}
 }
 

@@ -202,16 +202,18 @@ class FW_Option_Type_Form_Builder_Item_Checkboxes extends FW_Option_Type_Form_Bu
 	public function frontend_render( array $item, $input_value ) {
 		$options = $item['options'];
 
-		$value = ( is_null( $input_value ) || ! is_array( $input_value ) ) ? array() : $input_value;
+		$value = is_array( $input_value ) ? $input_value : array();
 
 		// prepare choices
 		{
-			$choices = array();
+			$choices      = array();
+			$shortcode    = $item['shortcode'] ?? '';
+			$item_choices = isset( $options['choices'] ) && is_array( $options['choices'] ) ? $options['choices'] : array();
 
-			foreach ( $options['choices'] as $choice ) {
+			foreach ( $item_choices as $choice ) {
 				$attr = array(
 					'type'  => 'checkbox',
-					'name'  => $item['shortcode'] . '[]',
+					'name'  => $shortcode . '[]',
 					'value' => $choice,
 				);
 
@@ -222,7 +224,7 @@ class FW_Option_Type_Form_Builder_Item_Checkboxes extends FW_Option_Type_Form_Bu
 				$choices[] = $attr;
 			}
 
-			if ( $options['randomize'] ) {
+			if ( ! empty( $options['randomize'] ) ) {
 				shuffle( $choices );
 			}
 		}
@@ -246,31 +248,35 @@ class FW_Option_Type_Form_Builder_Item_Checkboxes extends FW_Option_Type_Form_Bu
 		$messages = array(
 			'required'             => str_replace(
 				array( '{label}' ),
-				array( $options['label'] ),
+				array( $options['label'] ?? '' ),
 				__( 'The {label} field is required', 'fw' )
 			),
 			'not_existing_choices' => str_replace(
 				array( '{label}' ),
-				array( $options['label'] ),
+				array( $options['label'] ?? '' ),
 				__( '{label}: Submitted data contains not existing choices', 'fw' )
 			),
 		);
 
 		if ( empty( $options['choices'] ) ) {
 			// the item was not displayed in frontend
-			return;
+			return null;
 		}
 
-		if ( $options['required'] && empty( $input_value ) ) {
+		if ( ! empty( $options['required'] ) && empty( $input_value ) ) {
 			return $messages['required'];
 		}
 
+		if ( ! is_array( $input_value ) ) {
+			return null;
+		}
+
 		// check if has not existing choices
-		if ( ! empty( $input_value ) && count( $input_value ) != count( array_intersect( $options['choices'],
-				$input_value ) )
-		) {
+		if ( ! empty( $input_value ) && count( $input_value ) != count( array_intersect( $options['choices'], $input_value ) ) ) {
 			return $messages['not_existing_choices'];
 		}
+
+		return null;
 	}
 }
 

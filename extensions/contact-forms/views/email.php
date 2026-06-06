@@ -17,35 +17,33 @@
 
 		$item = &$shortcode_to_item[$shortcode];
 
-		if ( ! isset( $item['options'] ) ) {
+		if ( ! isset( $item['options'] ) || ! isset( $item['type'] ) ) {
 			continue;
 		}
 
 		$item_options = &$item['options'];
 
-		switch ($item['type']) {
-			case 'checkboxes':
-				$title = ( isset( $item_options['label'] ) ) ? fw_htmlspecialchars($item_options['label']) : '';
+		$title = isset( $item_options['label'] ) ? fw_htmlspecialchars( (string) $item_options['label'] ) : '';
+		$value = '';
 
+		switch ( $item['type'] ) {
+			case 'checkboxes':
 				if ( ! is_array( $form_value ) || empty( $form_value ) ) {
 					break;
 				}
 
-				$value = implode(', ', $form_value);
+				$value = implode( ', ', array_map( 'strval', $form_value ) );
 				break;
 			case 'textarea':
-				$title = fw_htmlspecialchars($item_options['label']);
-				$value = '<pre style="font-family:arial,sans-serif;font-size:100%;">'. fw_htmlspecialchars($form_value) .'</pre>';
+				$value = '<pre style="font-family:arial,sans-serif;font-size:100%;">'. fw_htmlspecialchars( (string) ( $form_value ?? '' ) ) .'</pre>';
 				break;
 			case 'recaptcha':
 				continue 2;
 			default:
-				$title = fw_htmlspecialchars($item_options['label']);
-
-				if (is_array($form_value)) {
-					$value = '<pre>'. fw_htmlspecialchars( print_r($form_value, true) ) .'</pre>';
+				if ( is_array( $form_value ) ) {
+					$value = '<pre>'. fw_htmlspecialchars( print_r( $form_value, true ) ) .'</pre>';
 				} else {
-					$value = fw_htmlspecialchars( $form_value );
+					$value = fw_htmlspecialchars( (string) ( $form_value ?? '' ) );
 				}
 		}
 		?>

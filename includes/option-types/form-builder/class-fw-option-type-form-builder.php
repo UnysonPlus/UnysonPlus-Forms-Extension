@@ -214,21 +214,22 @@ class FW_Option_Type_Form_Builder extends FW_Option_Type_Builder {
 		$errors = array();
 
 		foreach ( $items as $item ) {
-			if ( ! isset( $item_types[ $item['type'] ] ) ) {
-				trigger_error( 'Invalid form item type: ' . $item['type'], E_USER_WARNING );
+			if ( ! isset( $item['type'], $item_types[ $item['type'] ] ) ) {
+				trigger_error( 'Invalid form item type: ' . ( $item['type'] ?? '' ), E_USER_WARNING );
 				continue;
 			}
 
-			$input_value = isset( $input_values[ $item['shortcode'] ] ) ? $input_values[ $item['shortcode'] ] : null;
+			$shortcode   = $item['shortcode'] ?? '';
+			$input_value = $input_values[ $shortcode ] ?? null;
 
 			$error = $item_types[ $item['type'] ]->frontend_validate( $item, $input_value );
 
 			if ( $error ) {
-				$errors[ $item['shortcode'] ] = $error;
+				$errors[ $shortcode ] = $error;
 				continue;
 			}
 
-			if ( isset( $item['_items'] ) ) {
+			if ( isset( $item['_items'] ) && is_array( $item['_items'] ) ) {
 				$sub_errors = $this->frontend_validate( $item['_items'], $input_values );
 
 				if ( ! empty( $sub_errors ) ) {
@@ -258,8 +259,8 @@ class FW_Option_Type_Form_Builder extends FW_Option_Type_Builder {
 
 		foreach ( $items as $item ) {
 
-			if ( ! isset( $item_types[ $item['type'] ] ) ) {
-				trigger_error( 'Invalid form item type: ' . $item['type'], E_USER_WARNING );
+			if ( ! isset( $item['type'], $item_types[ $item['type'] ] ) ) {
+				trigger_error( 'Invalid form item type: ' . ( $item['type'] ?? '' ), E_USER_WARNING );
 				continue;
 			}
 
@@ -267,15 +268,21 @@ class FW_Option_Type_Form_Builder extends FW_Option_Type_Builder {
 				continue;
 			}
 
-			if ( isset( $values[ $item['shortcode'] ] ) ) {
-				trigger_error( 'Form item duplicate shortcode: ' . $item['shortcode'], E_USER_WARNING );
+			$shortcode = $item['shortcode'] ?? '';
+
+			if ( $shortcode === '' ) {
+				continue;
 			}
 
-			$values[ $item['shortcode'] ] = isset( $input_values[ $item['shortcode'] ] )
-				? $item_types[ $item['type'] ]->get_value_from_item( $input_values[ $item['shortcode'] ] )
+			if ( isset( $values[ $shortcode ] ) ) {
+				trigger_error( 'Form item duplicate shortcode: ' . $shortcode, E_USER_WARNING );
+			}
+
+			$values[ $shortcode ] = isset( $input_values[ $shortcode ] )
+				? $item_types[ $item['type'] ]->get_value_from_item( $input_values[ $shortcode ] )
 				: null;
 
-			if ( isset( $item['_items'] ) ) {
+			if ( isset( $item['_items'] ) && is_array( $item['_items'] ) ) {
 				$sub_values = $this->frontend_get_value_from_items( $item['_items'], $input_values );
 
 				if ( ! empty( $sub_values ) ) {
@@ -301,19 +308,20 @@ class FW_Option_Type_Form_Builder extends FW_Option_Type_Builder {
 		/**
 		 * @var FW_Option_Type_Form_Builder_Item[] $item_types
 		 */
-		$item_types = $this->get_item_types();
-		$row_class  = esc_attr( ( $row_class = fw_ext( 'builder' )->get_config( 'grid.row.class' ) ) ? $row_class : 'fw-row' );
-		$html       = '';
-		$width      = 0;
-		$counter    = 0;
+		$item_types       = $this->get_item_types();
+		$configured_class = fw_ext( 'builder' )->get_config( 'grid.row.class' );
+		$row_class        = esc_attr( $configured_class ? $configured_class : 'fw-row' );
+		$html             = '';
+		$width            = 0;
+		$counter          = 0;
 
 		foreach ( $items as $item ) {
-			if ( ! isset( $item_types[ $item['type'] ] ) ) {
-				trigger_error( 'Invalid form item type: ' . $item['type'], E_USER_WARNING );
+			if ( ! isset( $item['type'], $item_types[ $item['type'] ] ) ) {
+				trigger_error( 'Invalid form item type: ' . ( $item['type'] ?? '' ), E_USER_WARNING );
 				continue;
 			}
 
-			$input_value = isset( $input_values[ $item['shortcode'] ] ) ? $input_values[ $item['shortcode'] ] : null;
+			$input_value = $input_values[ $item['shortcode'] ?? '' ] ?? null;
 
 			$item_html = $item_types[ $item['type'] ]->frontend_render( $item, $input_value );
 
@@ -327,12 +335,12 @@ class FW_Option_Type_Form_Builder extends FW_Option_Type_Builder {
 
 			$html .= $item_html;
 
-			$width += $this->calculate_width( $item['width'] );
+			$width += $this->calculate_width( $item['width'] ?? '' );
 
 			if ( $width >= 1 ) {
 				$html  .= '</div>';
 				$width = 0;
-			} elseif ( isset( $items[ $counter + 1 ] ) && ( $width + $this->calculate_width( $items[ $counter + 1 ]['width'] ) > 1 ) ) {
+			} elseif ( isset( $items[ $counter + 1 ] ) && ( $width + $this->calculate_width( $items[ $counter + 1 ]['width'] ?? '' ) > 1 ) ) {
 				$html  .= '</div>';
 				$width = 0;
 			}
@@ -365,13 +373,13 @@ class FW_Option_Type_Form_Builder extends FW_Option_Type_Builder {
 			return 1;
 		}
 
-		$widths = explode( '_', $width );
+		$widths = explode( '_', (string) $width );
 
-		if ( empty( $widths ) ) {
+		if ( count( $widths ) < 2 || (int) $widths[1] === 0 ) {
 			return 1;
 		}
 
-		return ( float ) ( (int) $widths[0] / (int) $widths[1] );
+		return ( (int) $widths[0] ) / ( (int) $widths[1] );
 	}
 }
 

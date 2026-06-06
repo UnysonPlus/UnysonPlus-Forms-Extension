@@ -66,34 +66,46 @@ class FW_Extension_Forms extends FW_Extension {
 	 * @return array
 	 */
 	public function _frontend_form_render( $data ) {
-		$form_id              = $data['data']['form_id'];
-		$form_type            = $data['data']['form_type'];
-		$submit_button        = $data['data']['submit'];
+		$form_id              = $data['data']['form_id']   ?? '';
+		$form_type            = $data['data']['form_type'] ?? '';
+		$submit_button        = $data['data']['submit']    ?? null;
 		$form_type_input_name = 'fw_ext_forms_form_type';
 		$form_type_input_id   = 'fw_ext_forms_form_id';
 
-		$data['attr']['data-fw-ext-forms-type'] = $form_type;
-		$data['attr']['class'] = apply_filters('fw:ext:forms:attr:class', $data['attr']['class']);
+		if ( ! isset( $data['attr'] ) || ! is_array( $data['attr'] ) ) {
+			$data['attr'] = array();
+		}
 
-		echo '<input type="hidden" name="' . $form_type_input_name . '" value="' . esc_attr( $form_type ) . '" />';
-		echo '<input type="hidden" name="' . $form_type_input_id . '" value="' . esc_attr( $form_id ) . '" />';
+		$data['attr']['data-fw-ext-forms-type'] = $form_type;
+		$data['attr']['class'] = apply_filters( 'fw:ext:forms:attr:class', $data['attr']['class'] ?? '' );
+
+		echo '<input type="hidden" name="' . esc_attr( $form_type_input_name ) . '" value="' . esc_attr( $form_type ) . '" />';
+		echo '<input type="hidden" name="' . esc_attr( $form_type_input_id )   . '" value="' . esc_attr( $form_id )   . '" />';
 
 		/**
-		 * @var FW_Ext_Forms_Type $form_type
+		 * @var FW_Ext_Forms_Type $form_type_instance
 		 */
-		$form_type = fw_ext( $form_type );
+		$form_type_instance = fw_ext( $form_type );
+
+		if ( ! $form_type_instance ) {
+			return $data;
+		}
 
 		/**
 		 * @var FW_Option_Type_Form_Builder $builder
 		 */
-		$builder = fw()->backend->option_type( $form_type->get_form_builder_type() );
+		$builder = fw()->backend->option_type( $form_type_instance->get_form_builder_type() );
 
-		echo $builder->frontend_render( $data['data']['builder_value'], FW_Request::POST() );
+		echo $builder->frontend_render(
+			isset( $data['data']['builder_value'] ) && is_array( $data['data']['builder_value'] )
+				? $data['data']['builder_value']
+				: array(),
+			FW_Request::POST()
+		);
 
 		if ( ! is_null( $submit_button ) ) {
 			$data['submit']['html'] = $submit_button;
 		}
-
 
 		return $data;
 	}
@@ -128,7 +140,7 @@ class FW_Extension_Forms extends FW_Extension {
 
 		$form = $form_instance->get_form_builder_value( $form_id );
 
-		if ( empty( $form ) ) {
+		if ( empty( $form ) || empty( $form['json'] ) ) {
 			return array(
 				'invalid-form-id' => __( 'Unable to process the form', 'fw' )
 			);
@@ -145,10 +157,15 @@ class FW_Extension_Forms extends FW_Extension {
 			);
 		}
 
-		$items_errors = $builder->frontend_validate(
-			json_decode( $form['json'], true ),
-			FW_Request::POST()
-		);
+		$items = json_decode( (string) $form['json'], true );
+
+		if ( ! is_array( $items ) ) {
+			return array(
+				'invalid-form-id' => __( 'Unable to process the form', 'fw' )
+			);
+		}
+
+		$items_errors = $builder->frontend_validate( $items, FW_Request::POST() );
 
 		if ( ! empty( $items_errors ) ) {
 			$errors = array_merge( $errors, $items_errors );
@@ -169,43 +186,52 @@ class FW_Extension_Forms extends FW_Extension {
 		$form_type = FW_Request::POST( 'fw_ext_forms_form_type' );
 
 		/**
+		 * By default redirect to the same page
+		 * to prevent form submit alert on page refresh
+		 */
+		$fw_form_data['redirect'] = fw_current_url();
+
+		/**
 		 * @var FW_Ext_Forms_Type $form_instance
 		 */
 		$form_instance = fw_ext( $form_type );
+
+		if ( ! $this->_child_extension_is_valid( $form_instance ) ) {
+			return $fw_form_data;
+		}
 
 		/**
 		 * @var FW_Option_Type_Form_Builder $builder
 		 */
 		$builder = fw()->backend->option_type( $form_instance->get_form_builder_type() );
 
+		if ( ! $builder instanceof FW_Option_Type_Form_Builder ) {
+			return $fw_form_data;
+		}
+
 		/**
 		 * {json: '...', ...}
 		 */
 		$builder_value = $form_instance->get_form_builder_value( $form_id );
 
-		/**
-		 * {[item], [item], ...}
-		 */
-		$builder_value_json_array = json_decode( $builder_value['json'], true );
-
-		/**
-		 * By default redirect to the same page
-		 * to prevent form submit alert on page refresh
-		 */
-		$fw_form_data['redirect'] = fw_current_url();
-
-		if ( empty( $builder_value_json_array ) ) {
+		if ( empty( $builder_value ) || empty( $builder_value['json'] ) ) {
 			return $fw_form_data;
 		}
 
-		{
-			/**
-			 * {shortcode => item}
-			 */
-			$shortcode_to_item = array();
+		/**
+		 * {[item], [item], ...}
+		 */
+		$builder_value_json_array = json_decode( (string) $builder_value['json'], true );
 
-			$this->extract_shortcode_item( $shortcode_to_item, $builder_value_json_array );
+		if ( ! is_array( $builder_value_json_array ) || empty( $builder_value_json_array ) ) {
+			return $fw_form_data;
 		}
+
+		/**
+		 * {shortcode => item}
+		 */
+		$shortcode_to_item = array();
+		$this->extract_shortcode_item( $shortcode_to_item, $builder_value_json_array );
 
 		$process_data = $form_instance->process_form(
 			$builder->frontend_get_value_from_items(

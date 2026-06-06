@@ -14,7 +14,11 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 	public function get_form_builder_value( $form_id ) {
 		$form = $this->get_form_db_data( $form_id );
 
-		return ( empty( $form['form'] ) ? array() : $form['form'] );
+		if ( ! is_array( $form ) || empty( $form['form'] ) ) {
+			return array();
+		}
+
+		return $form['form'];
 	}
 
 	/**
@@ -55,13 +59,13 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 	 * @return string
 	 */
 	public function render( $data, $view_data = array() ) {
-		$form = $data['form'];
+		$form = $data['form'] ?? array();
 
 		if ( empty( $form ) ) {
 			return '';
 		}
 
-		$form_id = $data['id'];
+		$form_id = $data['id'] ?? '';
 		$submit_button_text = empty( $data['submit_button_text'] )
 			? __( 'Submit', 'fw' )
 			: $data['submit_button_text'];
@@ -114,41 +118,43 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 				__( 'Unable to process the form', 'fw' ),
 				'error'
 			);
+
+			return;
 		}
 
 		$form = $this->get_form_db_data( $form_id );
 
-		if ( empty( $form ) ) {
+		if ( empty( $form ) || empty( $form['email_to'] ) ) {
 			FW_Flash_Messages::add(
 				$flash_id,
 				__( 'Unable to process the form', 'fw' ),
 				'error'
 			);
+
+			return;
 		}
 
-		{
-			$to = array();
+		$to = array();
 
-			foreach (array_map('trim', explode(',', $form['email_to'])) as $to_email) {
-				if ( filter_var( $to_email, FILTER_VALIDATE_EMAIL ) ) {
-					$to[] = $to_email;
-				} else {
-					FW_Flash_Messages::add(
-						$flash_id,
-						__( 'Invalid destination email (please contact the site administrator)', 'fw' ),
-						'error'
-					);
+		foreach ( array_map( 'trim', explode( ',', (string) $form['email_to'] ) ) as $to_email ) {
+			if ( filter_var( $to_email, FILTER_VALIDATE_EMAIL ) ) {
+				$to[] = $to_email;
+			} else {
+				FW_Flash_Messages::add(
+					$flash_id,
+					__( 'Invalid destination email (please contact the site administrator)', 'fw' ),
+					'error'
+				);
 
-					return;
-				}
+				return;
 			}
-
-			$to = implode(',', $to);
 		}
+
+		$to = implode( ',', $to );
 
 		$entry_data = array(
 			'form_values'       => $form_values,
-			'shortcode_to_item' => $data['shortcode_to_item'],
+			'shortcode_to_item' => $data['shortcode_to_item'] ?? array(),
 			/** @since 2.0.30 */
 			'cc'  => apply_filters('fw:ext:contact-forms:email:cc',  array( /* 'john@smith.com' => 'John Smith' */ )),
 			/** @since 2.0.30 */
@@ -156,10 +162,15 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 		);
 
 		/**
-		 * Use the first email filed as Reply-To header
+		 * Use the first email field as Reply-To header
 		 */
-		foreach ($entry_data['shortcode_to_item'] as $item) {
-			if ($item['type'] === 'email' && $item['options']['required']) {
+		foreach ( $entry_data['shortcode_to_item'] as $item ) {
+			if (
+				isset( $item['type'], $item['options']['required'], $item['shortcode'] )
+				&& $item['type'] === 'email'
+				&& $item['options']['required']
+				&& isset( $entry_data['form_values'][ $item['shortcode'] ] )
+			) {
 				$entry_data['reply_to'] = $entry_data['form_values'][ $item['shortcode'] ];
 				break;
 			}
@@ -167,23 +178,23 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 
 		$result = fw_ext_mailer_send_mail(
 			$to,
-			fw_akg('subject_message', $form, ''),
+			fw_akg( 'subject_message', $form, '' ),
 			$this->render_view( 'email', $entry_data ),
 			$entry_data
 		);
 
-		if ( $result['status'] ) {
-			do_action('fw:ext:contact-forms:sent', $entry_data);
+		if ( ! empty( $result['status'] ) ) {
+			do_action( 'fw:ext:contact-forms:sent', $entry_data );
 
 			FW_Flash_Messages::add(
 				$flash_id,
-				fw_akg('success_message', $form, __( 'Message sent!', 'fw' ) ),
+				fw_akg( 'success_message', $form, __( 'Message sent!', 'fw' ) ),
 				'success'
 			);
 		} else {
 			FW_Flash_Messages::add(
 				$flash_id,
-				fw_akg('failure_message', $form, __( 'Oops something went wrong.', 'fw' ) ) . ' ' . $result['message'],
+				fw_akg( 'failure_message', $form, __( 'Oops something went wrong.', 'fw' ) ) . ' ' . ( $result['message'] ?? '' ),
 				'error'
 			);
 		}
@@ -226,7 +237,7 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 	public function get_option( $id, $multikey = null ) {
 		$form = $this->get_form_db_data( $id );
 
-		if ( empty( $form ) ) {
+		if ( empty( $form ) || ! is_array( $form ) ) {
 			return null;
 		}
 

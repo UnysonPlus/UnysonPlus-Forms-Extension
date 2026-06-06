@@ -190,13 +190,13 @@ class FW_Option_Type_Form_Builder_Item_Website extends FW_Option_Type_Form_Build
 		{
 			$attr = array(
 				'type'        => 'text',
-				'name'        => $item['shortcode'],
-				'placeholder' => $options['placeholder'],
-				'value'       => is_null( $input_value ) ? $options['default_value'] : $input_value,
+				'name'        => $item['shortcode'] ?? '',
+				'placeholder' => $options['placeholder'] ?? '',
+				'value'       => is_null( $input_value ) ? ( $options['default_value'] ?? '' ) : $input_value,
 				'id'          => 'id-' . fw_unique_increment(),
 			);
 
-			if ( $options['required'] ) {
+			if ( ! empty( $options['required'] ) ) {
 				$attr['required'] = 'required';
 			}
 		}
@@ -214,26 +214,29 @@ class FW_Option_Type_Form_Builder_Item_Website extends FW_Option_Type_Form_Build
 	 * {@inheritdoc}
 	 */
 	public function frontend_validate( array $item, $input_value ) {
-		$options = $item['options'];
+		$options     = $item['options'];
+		$input_value = is_scalar( $input_value ) ? (string) $input_value : '';
 
 		$messages = array(
 			'required'  => str_replace(
 				array( '{label}' ),
-				array( $options['label'] ),
+				array( $options['label'] ?? '' ),
 				__( 'The {label} field is required', 'fw' )
 			),
 			'incorrect' => str_replace(
 				array( '{label}' ),
-				array( $options['label'] ),
+				array( $options['label'] ?? '' ),
 				__( 'The {label} field must be a valid website name', 'fw' )
 			),
 		);
 
-		if ( ! $options['required'] && ! fw_strlen( trim( $input_value ) ) ) {
+		$required = ! empty( $options['required'] );
+
+		if ( ! $required && ! fw_strlen( trim( $input_value ) ) ) {
 			return null;
 		}
 
-		if ( $options['required'] && ! fw_strlen( trim( $input_value ) ) ) {
+		if ( $required && ! fw_strlen( trim( $input_value ) ) ) {
 			return $messages['required'];
 		}
 
@@ -241,9 +244,11 @@ class FW_Option_Type_Form_Builder_Item_Website extends FW_Option_Type_Form_Build
 			$input_value = 'http://' . $input_value;
 		}
 
-		if ( ! empty( $input_value ) && ! filter_var( $input_value, FILTER_VALIDATE_URL ) ) {
+		if ( $input_value !== '' && ! filter_var( $input_value, FILTER_VALIDATE_URL ) ) {
 			return $messages['incorrect'];
 		}
+
+		return null;
 	}
 }
 

@@ -186,25 +186,26 @@ class FW_Option_Type_Form_Builder_Item_Select extends FW_Option_Type_Form_Builde
 	public function frontend_render( array $item, $input_value ) {
 		$options = $item['options'];
 
-		$value = (string) $input_value;
+		$value = is_scalar( $input_value ) ? (string) $input_value : '';
 
 		// prepare choices
 		{
-			$choices = array();
+			$choices       = array();
+			$item_choices  = isset( $options['choices'] ) && is_array( $options['choices'] ) ? $options['choices'] : array();
 
-			foreach ( $options['choices'] as $choice ) {
+			foreach ( $item_choices as $choice ) {
 				$attr = array(
 					'value' => $choice,
 				);
 
-				if ( $choice === $value ) {
+				if ( (string) $choice === $value ) {
 					$attr['selected'] = 'selected';
 				}
 
 				$choices[] = $attr;
 			}
 
-			if ( $options['randomize'] ) {
+			if ( ! empty( $options['randomize'] ) ) {
 				shuffle( $choices );
 			}
 		}
@@ -216,7 +217,7 @@ class FW_Option_Type_Form_Builder_Item_Select extends FW_Option_Type_Form_Builde
 				'choices' => $choices,
 				'value'   => $value,
 				'attr'    => array(
-					'name' => $item['shortcode'],
+					'name' => $item['shortcode'] ?? '',
 					'id'   => 'id-' . fw_unique_increment(),
 				),
 			)
@@ -232,22 +233,22 @@ class FW_Option_Type_Form_Builder_Item_Select extends FW_Option_Type_Form_Builde
 		$messages = array(
 			'required'            => str_replace(
 				array( '{label}' ),
-				array( $options['label'] ),
+				array( $options['label'] ?? '' ),
 				__( 'The {label} field is required', 'fw' )
 			),
 			'not_existing_choice' => str_replace(
 				array( '{label}' ),
-				array( $options['label'] ),
+				array( $options['label'] ?? '' ),
 				__( '{label}: Submitted data contains not existing choice', 'fw' )
 			),
 		);
 
 		if ( empty( $options['choices'] ) ) {
 			// the item was not displayed in frontend
-			return;
+			return null;
 		}
 
-		if ( $options['required'] && empty( $input_value ) ) {
+		if ( ! empty( $options['required'] ) && ( $input_value === null || $input_value === '' ) ) {
 			return $messages['required'];
 		}
 
@@ -255,6 +256,8 @@ class FW_Option_Type_Form_Builder_Item_Select extends FW_Option_Type_Form_Builde
 		if ( ! empty( $input_value ) && ! in_array( $input_value, $options['choices'] ) ) {
 			return $messages['not_existing_choice'];
 		}
+
+		return null;
 	}
 }
 

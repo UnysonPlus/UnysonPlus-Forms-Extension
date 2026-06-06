@@ -281,8 +281,8 @@ class FW_Option_Type_Form_Builder_Item_Textarea extends FW_Option_Type_Form_Buil
 		// prepare attributes
 		{
 			$attr = array(
-				'name'        => $item['shortcode'],
-				'placeholder' => $options['placeholder'],
+				'name'        => $item['shortcode'] ?? '',
+				'placeholder' => $options['placeholder'] ?? '',
 				'id'          => 'id-' . fw_unique_increment(),
 			);
 
@@ -319,7 +319,7 @@ class FW_Option_Type_Form_Builder_Item_Textarea extends FW_Option_Type_Form_Buil
 			array(
 				'item'  => $item,
 				'attr'  => $attr,
-				'value' => is_null( $input_value ) ? $options['default_value'] : $input_value
+				'value' => is_null( $input_value ) ? ( $options['default_value'] ?? '' ) : $input_value
 			)
 		);
 	}
@@ -328,7 +328,8 @@ class FW_Option_Type_Form_Builder_Item_Textarea extends FW_Option_Type_Form_Buil
 	 * {@inheritdoc}
 	 */
 	public function frontend_validate( array $item, $input_value ) {
-		$options = $item['options'];
+		$options     = $item['options'];
+		$input_value = is_scalar( $input_value ) ? (string) $input_value : '';
 
 		$messages = array(
 			'required'                => str_replace(

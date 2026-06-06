@@ -19,19 +19,6 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 		add_filter( 'fw_ext:shortcodes:collect_shortcodes_data', array(
 			$this, '_filter_add_contact_form_data'
 		) );
-
-		add_action( 'save_post', array( $this, '_action_clear_temporary_data_form' ) );
-		add_action( 'delete_post', array( $this, '_action_clear_temporary_data_form' ) );
-	}
-
-	public function _action_clear_temporary_data_form( $post_id ) {
-
-		if ( ! ( $builder_data = fw_get_db_post_option( $post_id, 'page-builder' ) ) || ! $builder_data['builder_active'] ) {
-			return;
-		}
-
-		global $wpdb;
-		$wpdb->query( "DELETE FROM {$wpdb->prefix}options WHERE option_name LIKE '%fw:ext:cf:fd:%'" );
 	}
 
 	/**
@@ -50,13 +37,15 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 
 	protected function _render($atts, $content = null, $tag = '')
 	{
+		$atts = is_array($atts) ? $atts : array();
+
 		$form_data = array(
-			'id' => $atts['id'],
-			'form' => $atts['form'],
-			'email_to' => $atts['email_to'],
-			'subject_message' => $atts['subject_message'],
-			'success_message' => $atts['success_message'],
-			'failure_message' => $atts['failure_message'],
+			'id'              => $atts['id']              ?? '',
+			'form'            => $atts['form']            ?? array(),
+			'email_to'        => $atts['email_to']        ?? '',
+			'subject_message' => $atts['subject_message'] ?? '',
+			'success_message' => $atts['success_message'] ?? '',
+			'failure_message' => $atts['failure_message'] ?? '',
 		);
 
 		/**
@@ -70,13 +59,13 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 		 * There is no other possibility to save form data by id because contact form is a shortcode
 		 * it has no save action and we can't access it by id (we don't know in which post it is)
 		 */
-		$extension->_set_form_db_data($atts['id'], $atts);
+		$extension->_set_form_db_data($form_data['id'], $atts);
 
 		return $extension->render(
 			array(
-				'id' => $form_data['id'],
-				'form' => $form_data['form'],
-				'submit_button_text' => $atts['submit_button_text'],
+				'id'                 => $form_data['id'],
+				'form'               => $form_data['form'],
+				'submit_button_text' => $atts['submit_button_text'] ?? '',
 			),
 			/**
 			 * Extra options added by theme developer in shortcode options.php will be sent in form view
@@ -84,8 +73,8 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 			array_diff_key(
 				$atts,
 				array(
-					'width' => true,
-					'mailer' => true,
+					'width'              => true,
+					'mailer'             => true,
 					'submit_button_text' => true,
 				),
 				$form_data
@@ -107,8 +96,8 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 
 		$data = shortcode_atts(
 			array(
-				'title'      => __( 'Contact Formsss', 'fw' ),
-				'icon'      => $this->locate_URI( '/static/img/page_builder.png' ),
+				'title'      => __( 'Contact Form', 'fw' ),
+				'icon'       => $this->locate_URI( '/static/img/page_builder.png' ),
 				'popup_size' => 'large'
 			),
 			$shortcode->get_config( 'page_builder' )

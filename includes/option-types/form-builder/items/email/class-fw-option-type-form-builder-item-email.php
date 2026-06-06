@@ -183,13 +183,13 @@ class FW_Option_Type_Form_Builder_Item_Email extends FW_Option_Type_Form_Builder
 		{
 			$attr = array(
 				'type'        => 'text',
-				'name'        => $item['shortcode'],
-				'placeholder' => $options['placeholder'],
+				'name'        => $item['shortcode'] ?? '',
+				'placeholder' => $options['placeholder'] ?? '',
 				'value'       => is_null( $input_value ) ? '' : $input_value,
 				'id'          => 'id-' . fw_unique_increment(),
 			);
 
-			if ( $options['required'] ) {
+			if ( ! empty( $options['required'] ) ) {
 				$attr['required'] = 'required';
 			}
 		}
@@ -207,28 +207,31 @@ class FW_Option_Type_Form_Builder_Item_Email extends FW_Option_Type_Form_Builder
 	 * {@inheritdoc}
 	 */
 	public function frontend_validate( array $item, $input_value ) {
-		$options = $item['options'];
+		$options     = $item['options'];
+		$input_value = is_scalar( $input_value ) ? (string) $input_value : '';
 
 		$messages = array(
 			'required'  => str_replace(
 				array( '{label}' ),
-				array( $options['label'] ),
+				array( $options['label'] ?? '' ),
 				__( 'The {label} field is required', 'fw' )
 			),
 			'incorrect' => str_replace(
 				array( '{label}' ),
-				array( $options['label'] ),
+				array( $options['label'] ?? '' ),
 				__( 'The {label} field must contain a valid email', 'fw' )
 			),
 		);
 
-		if ( $options['required'] && ! fw_strlen( trim( $input_value ) ) ) {
+		if ( ! empty( $options['required'] ) && ! fw_strlen( trim( $input_value ) ) ) {
 			return $messages['required'];
 		}
 
-		if ( ! empty( $input_value ) && ! filter_var( $input_value, FILTER_VALIDATE_EMAIL ) ) {
+		if ( $input_value !== '' && ! filter_var( $input_value, FILTER_VALIDATE_EMAIL ) ) {
 			return $messages['incorrect'];
 		}
+
+		return null;
 	}
 }
 
