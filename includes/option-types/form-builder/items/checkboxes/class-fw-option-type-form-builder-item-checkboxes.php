@@ -33,12 +33,12 @@ class FW_Option_Type_Form_Builder_Item_Checkboxes extends FW_Option_Type_Form_Bu
 	public function enqueue_static() {
 		wp_enqueue_style(
 			'fw-builder-' . $this->get_builder_type() . '-item-' . $this->get_type(),
-			$this->get_uri( '/static/css/styles.css' )
+			fw_min_uri($this->get_uri( '/static/css/styles.css' ))
 		);
 
 		wp_enqueue_script(
 			'fw-builder-' . $this->get_builder_type() . '-item-' . $this->get_type(),
-			$this->get_uri( '/static/js/scripts.js' ),
+			fw_min_uri($this->get_uri( '/static/js/scripts.js' )),
 			array(
 				'fw-events',
 			),

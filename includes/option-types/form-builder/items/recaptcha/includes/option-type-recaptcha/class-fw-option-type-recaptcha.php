@@ -55,7 +55,7 @@ class FW_Option_Type_Recaptcha extends FW_Option_Type {
 	protected function _enqueue_static( $id, $option, $data ) {
 		wp_enqueue_style(
 			'fw-option-type-'. $this->get_type(),
-			$this->get_uri( '/static/css/styles.css' )
+			fw_min_uri($this->get_uri( '/static/css/styles.css' ))
 		);
 	}
 

@@ -36,12 +36,12 @@ class FW_Option_Type_Form_Builder_Item_Recaptcha extends FW_Option_Type_Form_Bui
 	public function enqueue_static() {
 		wp_enqueue_style(
 			'fw-builder-' . $this->get_builder_type() . '-item-' . $this->get_type(),
-			$this->get_uri( '/static/css/styles.css' )
+			fw_min_uri($this->get_uri( '/static/css/styles.css' ))
 		);
 
 		wp_enqueue_script(
 			'fw-builder-' . $this->get_builder_type() . '-item-' . $this->get_type(),
-			$this->get_uri( '/static/js/scripts.js' ),
+			fw_min_uri($this->get_uri( '/static/js/scripts.js' )),
 			array(
 				'fw-events',
 			),
@@ -114,7 +114,7 @@ class FW_Option_Type_Form_Builder_Item_Recaptcha extends FW_Option_Type_Form_Bui
 		}
 
 		wp_enqueue_script( 'frontend-recaptcha',
-			$this->get_uri( '/static/js/frontend-recaptcha.js' ),
+			fw_min_uri($this->get_uri( '/static/js/frontend-recaptcha.js' )),
 			array( 'jquery' ),
 			fw_ext( 'forms' )->manifest->get_version(),
 			true
