@@ -38,7 +38,13 @@
 				$value = '<pre style="font-family:arial,sans-serif;font-size:100%;">'. fw_htmlspecialchars( (string) ( $form_value ?? '' ) ) .'</pre>';
 				break;
 			case 'recaptcha':
+			case 'honeypot':
 				continue 2;
+			case 'file-upload':
+				$value = ( $form_value !== '' && $form_value !== null )
+					? fw_htmlspecialchars( (string) $form_value ) . ' <em>(' . esc_html__( 'attached', 'fw' ) . ')</em>'
+					: '&mdash;';
+				break;
 			default:
 				if ( is_array( $form_value ) ) {
 					$value = '<pre>'. fw_htmlspecialchars( print_r( $form_value, true ) ) .'</pre>';

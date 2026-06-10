@@ -77,6 +77,9 @@ class FW_Extension_Forms extends FW_Extension {
 		}
 
 		$data['attr']['data-fw-ext-forms-type'] = $form_type;
+		// Always multipart so the File Upload field works. Harmless for text-only
+		// forms — PHP still populates $_POST identically for multipart submissions.
+		$data['attr']['enctype'] = 'multipart/form-data';
 		$data['attr']['class'] = apply_filters( 'fw:ext:forms:attr:class', $data['attr']['class'] ?? '' );
 
 		echo '<input type="hidden" name="' . esc_attr( $form_type_input_name ) . '" value="' . esc_attr( $form_type ) . '" />';
@@ -233,14 +236,38 @@ class FW_Extension_Forms extends FW_Extension {
 		$shortcode_to_item = array();
 		$this->extract_shortcode_item( $shortcode_to_item, $builder_value_json_array );
 
+		$form_values = $builder->frontend_get_value_from_items(
+			$builder_value_json_array,
+			FW_Request::POST()
+		);
+
+		/**
+		 * File-upload fields live in $_FILES (not $_POST), so they bypass the value
+		 * pipeline above. Now that validation has passed, move them via the
+		 * collect-uploads filter, then merge each uploaded filename into the form
+		 * values (for the email body) and its absolute path into the attachments
+		 * (the mailer attaches them). No-op for forms without file fields.
+		 */
+		$attachments = array();
+		$uploads     = apply_filters( 'fw:ext:forms:collect-uploads', array(), $shortcode_to_item );
+		if ( is_array( $uploads ) ) {
+			foreach ( $uploads as $upload_shortcode => $upload ) {
+				if ( ! is_array( $upload ) ) {
+					continue;
+				}
+				$form_values[ $upload_shortcode ] = $upload['name'] ?? '';
+				if ( ! empty( $upload['file'] ) ) {
+					$attachments[] = $upload['file'];
+				}
+			}
+		}
+
 		$process_data = $form_instance->process_form(
-			$builder->frontend_get_value_from_items(
-				$builder_value_json_array,
-				FW_Request::POST()
-			),
+			$form_values,
 			array(
 				'shortcode_to_item' => $shortcode_to_item,
-				'builder_value'     => $builder_value
+				'builder_value'     => $builder_value,
+				'attachments'       => $attachments
 			)
 		);
 

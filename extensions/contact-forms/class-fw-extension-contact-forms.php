@@ -159,6 +159,8 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 			'cc'  => apply_filters('fw:ext:contact-forms:email:cc',  array( /* 'john@smith.com' => 'John Smith' */ )),
 			/** @since 2.0.30 */
 			'bcc' => apply_filters('fw:ext:contact-forms:email:bcc', array( /* 'john@smith.com' => 'John Smith' */ )),
+			// Absolute paths of uploaded files (File Upload fields) → mailer attaches them.
+			'attachments' => $data['attachments'] ?? array(),
 		);
 
 		/**

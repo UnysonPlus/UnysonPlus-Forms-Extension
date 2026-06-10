@@ -9,9 +9,9 @@ $manifest['description'] = __(
 	'fw'
 );
 
-$manifest['version']     = '2.0.35';
-$manifest['display']     = false;
-$manifest['standalone']  = false;
+$manifest['version']     = '2.0.38';
+$manifest['display']     = true;
+$manifest['standalone']  = true;
 
 // Repository Info
 $manifest['github_update'] = 'UnysonPlus/UnysonPlus-Forms-Extension';

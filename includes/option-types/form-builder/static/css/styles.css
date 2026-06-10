@@ -28,3 +28,19 @@
 body.rtl .fw-option-type-form-builder .fw-form-item-controls-right.fw-col-xs-5.fw-text-right {
 	text-align: left;
 }
+
+/* Field-type palette — give each draggable type box a gap + small rounded
+   border, matching the main page-builder's element palette (was a tight,
+   gapless 1px-outline grid). */
+.fw-option-type-form-builder .builder-item-type {
+	outline: none;
+	border: 1px solid #e1e1e1;
+	border-radius: 4px;
+	margin: 0 6px 6px 0;
+	background-color: #fff;
+}
+
+.fw-option-type-form-builder .builder-item-type:hover {
+	outline: none;
+	border-color: #8f8f8f;
+}

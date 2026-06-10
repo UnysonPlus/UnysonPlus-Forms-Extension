@@ -1,0 +1,10 @@
+.fw-option-type-form-builder .fw-form-builder-item-type-honeypot .fw-form-honeypot-note {
+	padding: 8px 4px;
+	color: #777;
+	font-style: italic;
+}
+
+.fw-option-type-form-builder .fw-form-builder-item-type-honeypot .fw-form-honeypot-note .dashicons {
+	vertical-align: middle;
+	margin-right: 2px;
+}
