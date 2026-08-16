@@ -37,6 +37,9 @@ body.rtl .fw-option-type-form-builder .fw-form-item-controls-right.fw-col-xs-5.f
 	border: 1px solid #e1e1e1;
 	border-radius: 4px;
 	margin: 0 6px 6px 0;
+	/* Small inner padding so the two-word labels (Single Line Text, Paragraph
+	   Text) wrap to two lines instead of touching the tile edges. */
+	padding: 0.25rem;
 	background-color: #fff;
 }
 

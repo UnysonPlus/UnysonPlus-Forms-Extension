@@ -16,7 +16,7 @@
 				};
 
 				fwEvents.trigger(event, eventData
-					? _.extend(eventData, data)
+					? Object.assign(eventData, data)
 					: data
 				);
 			},
@@ -85,7 +85,7 @@
 					});
 				}
 			},
-			template: _.template(
+			template: fw.template(
 				'<div class="pb-item-type-contact-form pb-item-type-simple pb-item <% if (hasOptions) { print(' + '"has-options"' + ')} %>">' +
 	        '<% if (icon) { %>' +
 		        '<% if (typeof FwBuilderComponents.ItemView.iconToHtml == "undefined") { %>' +
@@ -211,7 +211,7 @@
 				this.defaultInitialize();
 			},
 			allowIncomingType: function (type) {
-				return _.indexOf(this.restrictedTypes, type) === -1;
+				return this.restrictedTypes.indexOf(type) === -1;
 			}
 		});
 

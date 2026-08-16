@@ -29,7 +29,7 @@ class Page_Builder_Contact_Form_Item extends Page_Builder_Item {
 		wp_enqueue_script(
 			$this->get_builder_type() . '_item_type_' . $this->get_type(),
 			$uri. '/js/scripts.js',
-			array( 'fw-events', 'underscore', 'jquery' ),
+			array( 'fw-events', 'jquery' ),
 			fw()->theme->manifest->get_version(),
 			true
 		);

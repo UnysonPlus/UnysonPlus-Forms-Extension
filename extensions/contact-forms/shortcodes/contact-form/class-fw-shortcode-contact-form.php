@@ -61,7 +61,7 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 		 */
 		$extension->_set_form_db_data($form_data['id'], $atts);
 
-		return $extension->render(
+		$html = $extension->render(
 			array(
 				'id'                 => $form_data['id'],
 				'form'               => $form_data['form'],
@@ -80,6 +80,86 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 				$form_data
 			)
 		);
+
+		if ( $html === '' || $html === null ) {
+			return $html;
+		}
+
+		// --- Wrapper attribute plumbing (Advanced tab) + Style-tab scoped CSS ---
+		// Give the form the same wrapper surface every other element has: a base
+		// class + a unique per-instance class (for scoped Style CSS), plus the CSS
+		// ID / custom class / custom CSS / position / overflow / responsive-hide /
+		// custom-attributes that sc_build_wrapper_attr() and its filters apply.
+		if ( ! function_exists( 'sc_build_wrapper_attr' ) ) {
+			return $html;
+		}
+
+		$wrap_atts                     = $atts;
+		$wrap_atts['base_class']       = 'sc-contact-form';
+		$wrap_atts['unique_id_prefix'] = 'cf-';
+
+		$attr         = sc_build_wrapper_attr( $wrap_atts );
+		$unique_class = function_exists( 'sc_element_unique_class' ) ? sc_element_unique_class( $wrap_atts ) : '';
+		$scoped_css   = ( $unique_class !== '' ) ? $this->build_scoped_css( '.' . $unique_class, $atts ) : '';
+		$attr_html    = function_exists( 'fw_attr_to_html' ) ? fw_attr_to_html( $attr ) : '';
+
+		return $scoped_css . '<div ' . $attr_html . '>' . $html . '</div>';
+	}
+
+	/**
+	 * Build the per-instance <style> block from the Style tab values. Everything is
+	 * scoped to the wrapper's unique class ($sel), so two forms on a page can look
+	 * different. Colours resolve through sc_color_to_css() (preset -> var(--color-*),
+	 * custom -> sanitized literal); selects come from fixed whitelists.
+	 *
+	 * @param string $sel  Scoped selector, e.g. ".cf-abcd1234".
+	 * @param array  $atts Flattened shortcode option values.
+	 * @return string Empty when nothing is set, otherwise a <style> element.
+	 */
+	private function build_scoped_css( $sel, $atts ) {
+		$col = function ( $v ) {
+			return function_exists( 'sc_color_to_css' )
+				? sc_color_to_css( $v, '' )
+				: ( is_string( $v ) ? $v : '' );
+		};
+		$css = '';
+
+		// Layout — max width + horizontal placement.
+		$max = isset( $atts['form_max_width'] ) ? (string) $atts['form_max_width'] : '';
+		if ( $max !== '' ) {
+			$align = isset( $atts['form_align'] ) ? $atts['form_align'] : 'left';
+			$mx    = ( $align === 'center' ) ? 'margin-left:auto;margin-right:auto;'
+				: ( ( $align === 'right' ) ? 'margin-left:auto;' : '' );
+			$css  .= $sel . '{max-width:' . esc_attr( $max ) . ';' . $mx . '}';
+		}
+
+		// Field appearance — inputs / textarea / select (never the submit button).
+		$fields = $sel . ' input:not([type=submit]):not([type=button]):not([type=checkbox]):not([type=radio]),'
+			. $sel . ' textarea,' . $sel . ' select';
+		$fd = '';
+		if ( ( $v = $col( $atts['field_bg'] ?? '' ) ) !== '' )     { $fd .= 'background:' . $v . ';'; }
+		if ( ( $v = $col( $atts['field_text'] ?? '' ) ) !== '' )   { $fd .= 'color:' . $v . ';'; }
+		if ( ( $v = $col( $atts['field_border'] ?? '' ) ) !== '' ) { $fd .= 'border-color:' . $v . ';'; }
+		$fr  = (string) ( $atts['field_radius'] ?? '' );        if ( $fr  !== '' ) { $fd .= 'border-radius:' . esc_attr( $fr ) . ';'; }
+		$fbw = (string) ( $atts['field_border_width'] ?? '' );  if ( $fbw !== '' ) { $fd .= 'border-width:' . esc_attr( $fbw ) . ';border-style:solid;'; }
+		$fp  = (string) ( $atts['field_padding'] ?? '' );       if ( $fp  !== '' ) { $fd .= 'padding:' . esc_attr( $fp ) . ';'; }
+		if ( $fd !== '' ) { $css .= $fields . '{' . $fd . '}'; }
+
+		// Focus / accent.
+		if ( ( $v = $col( $atts['field_focus'] ?? '' ) ) !== '' ) {
+			$css .= $sel . ' input:focus,' . $sel . ' textarea:focus,' . $sel . ' select:focus{border-color:' . $v . ';outline-color:' . $v . ';}';
+		}
+
+		// Labels.
+		if ( ( $v = $col( $atts['label_color'] ?? '' ) ) !== '' ) {
+			$css .= $sel . ' label{color:' . $v . ';}';
+		}
+
+		// NOTE: the submit button is styled with the theme's Button presets
+		// (Style / Size / Shape / Full-width / Alignment), applied as `.btn …`
+		// classes on the <input> in contact-forms/views/submit.php — not here.
+
+		return ( $css === '' ) ? '' : '<style>' . $css . '</style>';
 	}
 
 	/**
@@ -114,6 +194,11 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 		$options = $this->get_options();
 
 		if ( $options ) {
+			// NOTE: do NOT call fw()->backend->enqueue_options_static( $options )
+			// here — get_item_data() runs during builder data collection and that
+			// enqueue is expensive enough to time out wp-scripts. The page-builder
+			// already enqueues option-type assets globally, so the Style/Advanced
+			// controls (compact colour picker, code editor, …) render without it.
 			// fw()->backend->enqueue_options_static( $options );
 
 			$data['options'] = $this->transform_options( $options );

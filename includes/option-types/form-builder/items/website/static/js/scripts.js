@@ -3,7 +3,7 @@ fwEvents.on('fw-builder:'+ 'form-builder' +':register-items', function(builder){
 	var localized = fw.unysonShortcodesData()['contact_form_items'][currentItemType];
 
 	var ItemView = builder.classes.ItemView.extend({
-		template: _.template(
+		template: fw.template(
 			'<div class="fw-form-builder-item-style-default fw-form-builder-item-type-'+ currentItemType +'">'+
 				'<div class="fw-form-item-controls fw-row">'+
 					'<div class="fw-form-item-controls-left fw-col-xs-7">'+
@@ -103,7 +103,7 @@ fwEvents.on('fw-builder:'+ 'form-builder' +':register-items', function(builder){
 			this.model.collection.remove(this.model);
 		},
 		toggleRequired: function() {
-			var values = _.clone(
+			var values = fw.clone(
 				// clone to not modify by reference, else model.set() will not trigger the 'change' event
 				this.model.get('options')
 			);
@@ -122,7 +122,7 @@ fwEvents.on('fw-builder:'+ 'form-builder' +':register-items', function(builder){
 			});
 		},
 		updateDefaultValueFromPreviewInput: function() {
-			var values = _.clone(
+			var values = fw.clone(
 				// clone to not modify by reference, else model.set() will not trigger the 'change' event
 				this.model.get('options')
 			);
@@ -145,7 +145,7 @@ fwEvents.on('fw-builder:'+ 'form-builder' +':register-items', function(builder){
 
 	var Item = builder.classes.Item.extend({
 		defaults: function() {
-			var defaults = _.clone(localized.defaults);
+			var defaults = fw.clone(localized.defaults);
 
 			defaults.shortcode = fwFormBuilder.uniqueShortcode(defaults.type +'_');
 

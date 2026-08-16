@@ -4,7 +4,7 @@ fwEvents.on('fw-builder:'+ 'form-builder' +':register-items', function(builder){
 	var localized = fw.unysonShortcodesData()['contact_form_items'][currentItemType];
 
 	var ItemView = builder.classes.ItemView.extend({
-		template: _.template(
+		template: fw.template(
 			'<div class="fw-form-builder-item-style-default fw-form-builder-item-type-'+ currentItemType +' fw-form-item-control-edit">'+
 				'<div class="fw-form-item-preview">'+
 					'<div class="fw-form-item-preview-title">'+
@@ -116,7 +116,7 @@ fwEvents.on('fw-builder:'+ 'form-builder' +':register-items', function(builder){
 
 	var Item = builder.classes.Item.extend({
 		defaults: function() {
-			var defaults = _.clone(localized.defaults);
+			var defaults = fw.clone(localized.defaults);
 
 			defaults.shortcode = defaults.type;
 			return defaults;
