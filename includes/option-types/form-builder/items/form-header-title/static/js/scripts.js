@@ -145,7 +145,7 @@ fwEvents.on('fw-builder:'+ 'form-builder' +':register-items', function(builder){
 
 	builder.registerItemClass(Item);
 
-	builder.rootItems.bind("add", function(model, attributes){
+	builder.rootItems.on("add", function(model, attributes){
 		var first_model = builder.rootItems.at(0);
 
 		if (first_model.id != 498157655) {
