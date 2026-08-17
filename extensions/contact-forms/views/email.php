@@ -32,7 +32,30 @@
 					break;
 				}
 
-				$value = implode( ', ', array_map( 'strval', $form_value ) );
+				/**
+				 * Escape each submitted choice, like every other branch here.
+				 *
+				 * $value is echoed WITHOUT escaping below, because the branches
+				 * build HTML (<pre>, <em>) — so escaping is each branch's own
+				 * responsibility. This one did not, making it the single
+				 * asymmetric branch in the file.
+				 *
+				 * Not currently exploitable: the checkboxes item validates the
+				 * submitted array against its declared choices server-side
+				 * (frontend_validate() rejects "not existing choices"), so an
+				 * attacker cannot get arbitrary markup in here today. It is
+				 * escaped anyway because that guarantee lives in a different
+				 * file, nothing at this line signals the dependency, and the
+				 * consequence if it is ever relaxed is HTML injected into an
+				 * email sent to the site owner.
+				 */
+				$value = implode(
+					', ',
+					array_map(
+						'fw_htmlspecialchars',
+						array_map( 'strval', $form_value )
+					)
+				);
 				break;
 			case 'textarea':
 				$value = '<pre style="font-family:arial,sans-serif;font-size:100%;">'. fw_htmlspecialchars( (string) ( $form_value ?? '' ) ) .'</pre>';
