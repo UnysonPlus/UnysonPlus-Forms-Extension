@@ -34,13 +34,13 @@ class FW_Option_Type_Recaptcha extends FW_Option_Type {
 			'type'          => 'multi',
 			'inner-options' => array(
 				'site-key'    => array(
-					'label' => __( 'Site key', 'unyson' ),
-					'desc'  => __( 'Your website key. More on how to configure ReCaptcha', 'unyson' ) . ': <a href="https://www.google.com/recaptcha" target="_blank">https://www.google.com/recaptcha</a>',
+					'label' => __( 'Site key', 'fw' ),
+					'desc'  => __( 'Your website key. More on how to configure ReCaptcha', 'fw' ) . ': <a href="https://www.google.com/recaptcha" target="_blank">https://www.google.com/recaptcha</a>',
 					'type'  => 'text'
 				),
 				'secret-key'    => array(
-					'label' => __( 'Secret key', 'unyson' ),
-					'desc'  => __( 'Your secret key. More on how to configure ReCaptcha', 'unyson' ) . ': <a href="https://www.google.com/recaptcha" target="_blank">https://www.google.com/recaptcha</a>',
+					'label' => __( 'Secret key', 'fw' ),
+					'desc'  => __( 'Your secret key. More on how to configure ReCaptcha', 'fw' ) . ': <a href="https://www.google.com/recaptcha" target="_blank">https://www.google.com/recaptcha</a>',
 					'type'  => 'text'
 				),
 			),
