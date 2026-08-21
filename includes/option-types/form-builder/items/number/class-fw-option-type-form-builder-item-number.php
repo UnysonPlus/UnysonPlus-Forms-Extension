@@ -70,7 +70,16 @@ class FW_Option_Type_Form_Builder_Item_Number extends FW_Option_Type_Form_Builde
 		);
 	}
 
-	private function get_options() {
+	/**
+	 * This item type's option schema.
+	 *
+	 * PUBLIC rather than private so the schema can be handed to a renderer other
+	 * than the page builder's — the Gutenberg bridge builds a form editor from it,
+	 * and a private method left reflection as the only way in.
+	 *
+	 * Widening visibility is additive: nothing that called it before can break.
+	 */
+	public function get_options() {
 		return array(
 			array(
 				'g1' => array(

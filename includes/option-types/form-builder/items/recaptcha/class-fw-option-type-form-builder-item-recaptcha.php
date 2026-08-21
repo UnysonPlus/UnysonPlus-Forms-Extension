@@ -74,7 +74,16 @@ class FW_Option_Type_Form_Builder_Item_Recaptcha extends FW_Option_Type_Form_Bui
 		);
 	}
 
-	private function get_options() {
+	/**
+	 * This item type's option schema.
+	 *
+	 * PUBLIC rather than private so the schema can be handed to a renderer other
+	 * than the page builder's — the Gutenberg bridge builds a form editor from it,
+	 * and a private method left reflection as the only way in.
+	 *
+	 * Widening visibility is additive: nothing that called it before can break.
+	 */
+	public function get_options() {
 		return array(
 			'label'     => array(
 				'type'  => 'text',
