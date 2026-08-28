@@ -155,9 +155,17 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 		$entry_data = array(
 			'form_values'       => $form_values,
 			'shortcode_to_item' => $data['shortcode_to_item'] ?? array(),
-			/** @since 2.0.30 */
+			/**
+			 * Filters the CC recipient map used when a contact-form submission email is sent.
+			 *
+			 * @since 2.0.30
+			 */
 			'cc'  => apply_filters('fw:ext:contact-forms:email:cc',  array( /* 'john@smith.com' => 'John Smith' */ )),
-			/** @since 2.0.30 */
+			/**
+			 * Filters the BCC recipient map used when a contact-form submission email is sent.
+			 *
+			 * @since 2.0.30
+			 */
 			'bcc' => apply_filters('fw:ext:contact-forms:email:bcc', array( /* 'john@smith.com' => 'John Smith' */ )),
 			// Absolute paths of uploaded files (File Upload fields) → mailer attaches them.
 			'attachments' => $data['attachments'] ?? array(),
@@ -186,6 +194,7 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 		);
 
 		if ( ! empty( $result['status'] ) ) {
+			/** Fires after a contact-form email is sent successfully, passing the entry data so listeners can log or react to the submission. */
 			do_action( 'fw:ext:contact-forms:sent', $entry_data );
 
 			FW_Flash_Messages::add(

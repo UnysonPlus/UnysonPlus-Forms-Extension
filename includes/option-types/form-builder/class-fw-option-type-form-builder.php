@@ -21,6 +21,7 @@ class FW_Option_Type_Form_Builder extends FW_Option_Type_Builder {
 		require $dir . '/extends/class-fw-option-type-form-builder-item.php';
 		require $dir . '/items/form-builder-items.php';
 
+		/** Fires after the Form Builder option type loads its item classes, letting extensions register additional form-builder items. */
 		do_action( 'fw_option_type_form_builder_init' );
 
 		if( is_admin() && defined('DOING_AJAX') ) {

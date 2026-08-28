@@ -80,6 +80,7 @@ class FW_Extension_Forms extends FW_Extension {
 		// Always multipart so the File Upload field works. Harmless for text-only
 		// forms — PHP still populates $_POST identically for multipart submissions.
 		$data['attr']['enctype'] = 'multipart/form-data';
+		/** Filters the CSS class string applied to the rendered form element. */
 		$data['attr']['class'] = apply_filters( 'fw:ext:forms:attr:class', $data['attr']['class'] ?? '' );
 
 		echo '<input type="hidden" name="' . esc_attr( $form_type_input_name ) . '" value="' . esc_attr( $form_type ) . '" />';
@@ -249,6 +250,7 @@ class FW_Extension_Forms extends FW_Extension {
 		 * (the mailer attaches them). No-op for forms without file fields.
 		 */
 		$attachments = array();
+		/** Filters the collected uploaded files (from File Upload fields) mapped by shortcode, after validation passes. */
 		$uploads     = apply_filters( 'fw:ext:forms:collect-uploads', array(), $shortcode_to_item );
 		if ( is_array( $uploads ) ) {
 			foreach ( $uploads as $upload_shortcode => $upload ) {
@@ -277,6 +279,7 @@ class FW_Extension_Forms extends FW_Extension {
 			}
 		}
 
+		/** Fires after a frontend form is submitted, passing form id, type, instance, and process data for post-submit handling. */
 		do_action('fw_ext_forms_frontend_submit', array(
 			'id' => $form_id,
 			'type' => $form_type,

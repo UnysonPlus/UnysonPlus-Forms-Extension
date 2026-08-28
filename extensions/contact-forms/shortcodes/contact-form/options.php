@@ -20,6 +20,7 @@ $options = array(
 				'label' => false,
 				'type'  => 'form-builder',
 				'value' => array(
+					/** Filters whether a new contact form seeds a default form-header-title item into the form builder. */
 					'json' => apply_filters('fw:ext:forms:builder:load-item:form-header-title', true)
 						? json_encode( array(
 							array(
