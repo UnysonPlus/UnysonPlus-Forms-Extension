@@ -20,6 +20,9 @@ class FW_Extension_Forms extends FW_Extension {
 	 * @internal
 	 */
 	protected function _init() {
+		// AI Assistant abilities (only registered while that extension is active).
+		require_once dirname( __FILE__ ) . '/includes/ai-abilities.php';
+
 		$this->frontend_form = new FW_Form( 'fw_form', array(
 			'render'   => array( $this, '_frontend_form_render' ),
 			'validate' => array( $this, '_frontend_form_validate' ),

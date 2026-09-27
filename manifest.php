@@ -9,7 +9,7 @@ $manifest['description'] = __(
 	'fw'
 );
 
-$manifest['version']     = '2.0.48';
+$manifest['version']     = '2.0.56';
 $manifest['display']     = true;
 $manifest['standalone']  = true;
 
@@ -34,3 +34,12 @@ $manifest['license']      = 'GPL-2.0-or-later';
 $manifest['text_domain']  = 'fw';
 $manifest['requires_php'] = '7.4';
 $manifest['requires_wp']  = '5.8';
+
+/**
+ * Changelog
+ * ---------
+ * 2.0.56 - AI Assistant abilities. With the AI Assistant extension active, the AI can
+ *         add contact forms to pages: forms-describe and forms-add (a form from simple
+ *         field definitions, normalised by each field's own item class; no access to
+ *         entries). See includes/ai-abilities.php.
+ */
