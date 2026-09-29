@@ -125,6 +125,15 @@ class FW_Extension_Forms extends FW_Extension {
 	 * @return array
 	 */
 	public function _frontend_form_validate( $errors ) {
+		// Public submissions usually send mail; a nonce does not bound how often
+		// one visitor can replay the form. 10 per 10 minutes leaves room to fix
+		// validation errors and resubmit.
+		if ( function_exists( 'fw_rate_limit_exceeded' ) && fw_rate_limit_exceeded( 'fw_ext_forms_submit', 10, 600 ) ) {
+			return array(
+				'rate-limit' => __( 'Too many submissions. Please wait a few minutes and try again.', 'fw' ),
+			);
+		}
+
 		$form_id   = FW_Request::POST( 'fw_ext_forms_form_id' );
 		$form_type = FW_Request::POST( 'fw_ext_forms_form_type' );
 
