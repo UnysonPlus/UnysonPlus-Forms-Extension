@@ -53,4 +53,37 @@ $options = array(
 			),
 		),
 	),
+	'entries_box' => array(
+		'title'   => __( 'Entries', 'fw' ),
+		'type'    => 'box',
+		'options' => array(
+			'group_entries' => array(
+				'type'    => 'group',
+				'options' => array(
+					'entries_store' => array(
+						'type'         => 'switch',
+						'label'        => __( 'Store submissions', 'fw' ),
+						'desc'         => __( 'Keep every form submission as an entry you can search, read and export under Unyson+ → Form Entries. Emails are still sent as before; this is in addition, not instead — and an entry is stored even if the email fails to send.', 'fw' ),
+						'value'        => 'yes',
+						'left-choice'  => array( 'value' => 'no',  'label' => __( 'No', 'fw' ) ),
+						'right-choice' => array( 'value' => 'yes', 'label' => __( 'Yes', 'fw' ) ),
+					),
+					'entries_store_ip' => array(
+						'type'         => 'switch',
+						'label'        => __( 'Record IP address', 'fw' ),
+						'desc'         => __( 'Store the IP address of the sender with each entry. Off by default: it is personal data under GDPR, and most sites have no use for it.', 'fw' ),
+						'value'        => 'no',
+						'left-choice'  => array( 'value' => 'no',  'label' => __( 'No', 'fw' ) ),
+						'right-choice' => array( 'value' => 'yes', 'label' => __( 'Yes', 'fw' ) ),
+					),
+					'entries_retention_days' => array(
+						'type'  => 'text',
+						'label' => __( 'Keep entries for (days)', 'fw' ),
+						'desc'  => __( 'Entries older than this are deleted automatically once a day. Leave 0 to keep them until you delete them. Entries are also included in the WordPress Export / Erase Personal Data tools, so a data request covers them.', 'fw' ),
+						'value' => '0',
+					),
+				),
+			),
+		),
+	),
 );

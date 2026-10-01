@@ -18,13 +18,14 @@ $options = $item['options'];
 				<?php if ($options['required']): ?><sup>*</sup><?php endif; ?>
 			</label>
 			<?php endif; ?>
+			<?php if ( ! empty( $options['info'] ) && ! empty( $attr['id'] ) ) { $attr['aria-describedby'] = $attr['id'] . '-info'; } ?>
 			<select <?php echo fw_attr_to_html($attr) ?> >
 				<?php foreach ($choices as $choice): ?>
 					<option <?php echo fw_attr_to_html($choice) ?> ><?php echo $choice['value'] ?></option>
 				<?php endforeach; ?>
 			</select>
 			<?php if ($options['info']): ?>
-				<p><em><?php echo $options['info'] ?></em></p>
+				<p class="field-info" id="<?php echo esc_attr( $attr['id'] ) ?>-info"><em><?php echo esc_html( $options['info'] ) ?></em></p>
 			<?php endif; ?>
 		</div>
 	</div>

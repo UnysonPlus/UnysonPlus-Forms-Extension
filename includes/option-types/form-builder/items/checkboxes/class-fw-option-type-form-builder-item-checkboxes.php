@@ -148,8 +148,8 @@ class FW_Option_Type_Form_Builder_Item_Checkboxes extends FW_Option_Type_Form_Bu
 			array(
 				'info' => array(
 					'type'  => 'textarea',
-					'label' => __( 'Instructions for Users', 'fw' ),
-					'desc'  => __( 'The users will see these instructions in the tooltip near the field', 'fw' ),
+					'label' => __( 'Help Text', 'fw' ),
+					'desc'  => __( 'Help text shown under the field, e.g. âA sentence or two is plenty.â It is linked to the field for screen readers.', 'fw' ),
 				)
 			),
 			$this->get_extra_options()

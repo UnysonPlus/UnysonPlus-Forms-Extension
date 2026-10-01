@@ -1,0 +1,5 @@
+/* Consent field — canvas preview */
+.fw-consent-preview { display: inline-flex; gap: 6px; align-items: flex-start; font-size: 13px; }
+.fw-consent-preview__tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 3px; font-size: 11px; background: #e5f5fa; color: #0a4b78; vertical-align: middle; }
+/* The statement is the label; hide the generic label row so it is not shown twice. */
+.fw-form-builder-item-type-consent .fw-form-item-preview-label { display: none; }

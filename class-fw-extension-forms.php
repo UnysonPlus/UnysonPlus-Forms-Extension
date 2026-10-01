@@ -23,6 +23,30 @@ class FW_Extension_Forms extends FW_Extension {
 		// AI Assistant abilities (only registered while that extension is active).
 		require_once dirname( __FILE__ ) . '/includes/ai-abilities.php';
 
+		// Entries: stored submissions. Lives on the submit hook, so the pipeline
+		// below never learns it exists.
+		$entries = dirname( __FILE__ ) . '/includes/entries';
+		require_once $entries . '/class-fw-forms-entries-installer.php';
+		require_once $entries . '/class-fw-forms-entries.php';
+		require_once $entries . '/class-fw-forms-entries-capture.php';
+		FW_Forms_Entries_Installer::maybe_install();
+		new FW_Forms_Entries_Capture();
+
+		if ( is_admin() ) {
+			require_once $entries . '/class-fw-forms-entries-admin.php';
+			new FW_Forms_Entries_Admin();
+		}
+
+		// Conditional visibility — one rule per field, enforced server-side.
+		require_once dirname( __FILE__ ) . '/includes/conditions/class-fw-forms-conditions.php';
+
+		// Actions: what a form does after a successful submit, per form. Other
+		// extensions add theirs through `fw_ext_forms_actions`.
+		$actions = dirname( __FILE__ ) . '/includes/actions';
+		require_once $actions . '/class-fw-forms-action.php';
+		require_once $actions . '/class-fw-forms-actions.php';
+		new FW_Forms_Actions();
+
 		$this->frontend_form = new FW_Form( 'fw_form', array(
 			'render'   => array( $this, '_frontend_form_render' ),
 			'validate' => array( $this, '_frontend_form_validate' ),
@@ -30,6 +54,42 @@ class FW_Extension_Forms extends FW_Extension {
 		) );
 
 		add_filter('fw:form:nonce-name-data', array($this, '_filter_frontend_nonce_name_date'), 10, 3);
+	}
+
+	/**
+	 * Register the front-end form stylesheet + conditions script (idempotent).
+	 */
+	public function register_frontend_static() {
+		if ( wp_style_is( 'fw-ext-forms-default-styles', 'registered' ) ) {
+			return;
+		}
+		wp_register_style(
+			'fw-ext-forms-default-styles',
+			fw_min_uri( $this->get_declared_URI( '/static/css/frontend.css' ) ),
+			array(),
+			fw()->manifest->get_version()
+		);
+		// "Show only when…" rules: toggles fields live; the server enforces the same rules on submit.
+		wp_register_script(
+			'fw-ext-forms-conditions',
+			fw_min_uri( $this->get_declared_URI( '/static/js/conditions.js' ) ),
+			array(),
+			$this->manifest->get_version(),
+			true
+		);
+	}
+
+	/**
+	 * Enqueue the front-end form assets. Called only where a form is on the page,
+	 * so pages without a form don't download them.
+	 */
+	public function enqueue_frontend_static() {
+		if ( is_admin() ) {
+			return;
+		}
+		$this->register_frontend_static();
+		wp_enqueue_style( 'fw-ext-forms-default-styles' );
+		wp_enqueue_script( 'fw-ext-forms-conditions' );
 	}
 
 	/**
@@ -47,6 +107,10 @@ class FW_Extension_Forms extends FW_Extension {
 		if ( empty( $form['json'] ) ) {
 			return '';
 		}
+
+		// No-op when the form's shortcode already enqueued these in <head>; otherwise
+		// (a form rendered some other way) WordPress prints them in the footer.
+		$this->enqueue_frontend_static();
 
 		ob_start();
 		{
@@ -103,12 +167,22 @@ class FW_Extension_Forms extends FW_Extension {
 		 */
 		$builder = fw()->backend->option_type( $form_type_instance->get_form_builder_type() );
 
-		echo $builder->frontend_render(
-			isset( $data['data']['builder_value'] ) && is_array( $data['data']['builder_value'] )
-				? $data['data']['builder_value']
-				: array(),
-			FW_Request::POST()
-		);
+		$items = isset( $data['data']['builder_value'] ) && is_array( $data['data']['builder_value'] )
+			? $data['data']['builder_value']
+			: array();
+
+		echo $builder->frontend_render( $items, FW_Request::POST() );
+
+		// The form's "show only when…" rules, for the front-end script. Emitted
+		// INSIDE the form so the script scopes them to this form alone; the
+		// server enforces the same rules regardless of what the script does.
+		if ( class_exists( 'FW_Forms_Conditions' ) ) {
+			$rules = FW_Forms_Conditions::rules_for_client( $items );
+
+			if ( $rules ) {
+				echo '<script type="application/json" class="fw-form-conditions">' . wp_json_encode( $rules ) . '</script>';
+			}
+		}
 
 		if ( ! is_null( $submit_button ) ) {
 			$data['submit']['html'] = $submit_button;
@@ -300,7 +374,15 @@ class FW_Extension_Forms extends FW_Extension {
 			/** @since 2.0.28 */
 			'shortcode_to_item' => $shortcode_to_item,
 			/** @since 2.0.28 */
-			'builder_value'     => $builder_value
+			'builder_value'     => $builder_value,
+			/**
+			 * @since 2.0.50 The submitted values (shortcode => value) and uploaded
+			 * file paths. Without these a listener could see THAT a form was
+			 * submitted but not WHAT was submitted — which is why entries could
+			 * not be stored from this hook before.
+			 */
+			'form_values'       => $form_values,
+			'attachments'       => $attachments,
 		));
 
 		return $fw_form_data;

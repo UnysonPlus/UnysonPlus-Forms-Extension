@@ -436,3 +436,79 @@ body.rtl .wrap-forms .field-columns-3 .field-column {
 }
 
 /* end: layout */
+/* --- Modern form fields (UnysonPlus) -----------------------------------------------------------
+   The base rules above only SIZED the fields, so the browser's default 2px inset border + Arial
+   showed through and made every form read as dated. Give text-like fields a flat 1px border,
+   rounded corners, the site's own font (inherit) and a soft focus ring. Scoped with :not() so
+   checkboxes / radios / submit / button keep their own styling. Emitted BEFORE the shortcode's
+   per-instance scoped CSS, so the Style tab (Field / Border / Focus / Radius) still overrides. */
+.wrap-forms input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+.wrap-forms textarea,
+.wrap-forms select {
+	box-sizing: border-box;
+	border: 1px solid #dbdfe4;
+	border-radius: 10px;
+	background: #fff;
+	color: #14161a;
+	font-family: inherit;
+	transition: border-color .15s ease, box-shadow .15s ease;
+}
+.wrap-forms input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+.wrap-forms select {
+	height: 48px;
+	padding: 0 16px;
+}
+.wrap-forms input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+.wrap-forms textarea {
+	-webkit-appearance: none;
+	appearance: none;
+}
+.wrap-forms textarea {
+	padding: 14px 16px;
+	min-height: 148px;
+	line-height: 1.6;
+}
+.wrap-forms input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"])::placeholder,
+.wrap-forms textarea::placeholder {
+	color: #9aa2ab;
+	opacity: 1;
+}
+.wrap-forms input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):focus,
+.wrap-forms textarea:focus,
+.wrap-forms select:focus {
+	outline: none;
+	border-color: #14161a;
+	box-shadow: 0 0 0 3px rgba(20, 22, 26, .08);
+}
+
+/* ---------------------------------------------------------------------------
+ * Rating field — native radios, visual on the labels. The inputs stay in the
+ * DOM (visually hidden, not display:none) so keyboard focus and the browser's
+ * own required-check keep working.
+ * ------------------------------------------------------------------------- */
+.wrap-forms .field-rating { border: 0; padding: 0; margin: 0 0 1rem; min-width: 0; }
+.wrap-forms .field-rating legend { padding: 0; margin-bottom: .5rem; font-weight: 600; }
+.wrap-forms .fw-rating__scale { display: inline-block; max-width: 100%; }
+.wrap-forms .fw-rating__points { display: flex; flex-wrap: wrap; gap: .35rem; }
+.wrap-forms .fw-rating__input { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.wrap-forms .fw-rating__point { display: inline-block; width: auto; margin: 0; flex: 0 0 auto; cursor: pointer; user-select: none; line-height: 1; } /* the base .wrap-forms label rule is display:block/100%, which would wrap every point onto its own row */
+.wrap-forms .fw-rating__input:focus-visible + .fw-rating__point { outline: 2px solid #14161a; outline-offset: 2px; border-radius: 4px; }
+/* pills (NPS / 1–10) */
+.wrap-forms .fw-rating--pills .fw-rating__point { min-width: 2.4rem; padding: .55rem 0; text-align: center; border: 1px solid #d0d3d8; border-radius: 6px; background: #fff; font-size: .95rem; transition: background .15s, color .15s, border-color .15s; }
+.wrap-forms .fw-rating--pills .fw-rating__point:hover { border-color: #14161a; }
+.wrap-forms .fw-rating--pills .fw-rating__input:checked + .fw-rating__point { background: #14161a; color: #fff; border-color: #14161a; }
+/* stars (1–5): every star up to the checked one lights, via the hover/checked chain */
+.wrap-forms .fw-rating--stars .fw-rating__points { flex-direction: row-reverse; justify-content: flex-end; gap: .15rem; } /* row-reverse: flex-end is the visual left */
+.wrap-forms .fw-rating--stars .fw-rating__star { font-size: 1.9rem; color: #cfd2d6; transition: color .15s; }
+.wrap-forms .fw-rating--stars .fw-rating__point:hover .fw-rating__star,
+.wrap-forms .fw-rating--stars .fw-rating__point:hover ~ .fw-rating__point .fw-rating__star,
+.wrap-forms .fw-rating--stars .fw-rating__input:checked + .fw-rating__point .fw-rating__star,
+.wrap-forms .fw-rating--stars .fw-rating__input:checked + .fw-rating__point ~ .fw-rating__point .fw-rating__star { color: #dba617; }
+.wrap-forms .fw-rating__ends { display: flex; justify-content: space-between; margin-top: .35rem; font-size: .85rem; opacity: .75; }
+
+/* Consent field — a single checkbox whose label may carry a link (privacy policy). */
+.wrap-forms .field-consent { margin: 0 0 1rem; }
+.wrap-forms .field-consent label { display: flex; gap: .6rem; align-items: flex-start; font-weight: 400; cursor: pointer; }
+.wrap-forms .field-consent input[type="checkbox"] { width: auto; height: auto; min-height: 0; padding: 0; margin: .3em 0 0; flex: 0 0 auto; }
+.wrap-forms .field-consent label span { flex: 1 1 auto; width: auto; }
+.wrap-forms .field-consent a { text-decoration: underline; }

@@ -55,7 +55,7 @@ switch ($options['layout']) {
 				<?php endif; ?>
 			</div>
 			<?php if ($options['info']): ?>
-				<p><em><?php echo $options['info'] ?></em></p>
+				<p class="field-info" id="<?php echo esc_attr( $attr['id'] ) ?>-info"><em><?php echo esc_html( $options['info'] ) ?></em></p>
 			<?php endif; ?>
 		</div>
 	</div>

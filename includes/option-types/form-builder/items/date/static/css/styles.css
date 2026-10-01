@@ -1,0 +1,2 @@
+/* Date / Time field — canvas preview only; the front end uses the form's own field styles. */
+.fw-form-builder-item-type-date .fw-form-item-preview-input input { max-width: 240px; }

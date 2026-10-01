@@ -15,8 +15,26 @@ class FW_Option_Type_Form_Builder extends FW_Option_Type_Builder {
 	/**
 	 * @internal
 	 */
+	/**
+	 * `template_saving` switches on the FRAMEWORK's builder template library —
+	 * the Templates panel, save-as-template, load, delete, JSON export/import —
+	 * exactly as it does for the page and email builders. Storage is scoped by
+	 * builder type (`fw:bt:f:form-builder:…`), so a form template can never
+	 * appear in another builder's list. Our starters ride the framework's own
+	 * predefined-templates filter (see FW_Forms_Starters).
+	 */
+	protected function _get_defaults() {
+		return array(
+			'value'           => array( 'json' => '[]' ),
+			'template_saving' => true,
+		);
+	}
+
 	protected function _init() {
 		$dir = dirname( __FILE__ );
+
+		require_once dirname( dirname( dirname( __FILE__ ) ) ) . '/class-fw-forms-starters.php';
+		add_filter( 'fw_ext_builder:predefined_templates:' . $this->get_type() . ':full', array( 'FW_Forms_Starters', '_filter_predefined' ) );
 
 		require $dir . '/extends/class-fw-option-type-form-builder-item.php';
 		require $dir . '/items/form-builder-items.php';
@@ -223,6 +241,12 @@ class FW_Option_Type_Form_Builder extends FW_Option_Type_Builder {
 			$shortcode   = $item['shortcode'] ?? '';
 			$input_value = $input_values[ $shortcode ] ?? null;
 
+			// A field hidden by its "show only when…" rule is not validated — a
+			// required field the visitor never saw cannot be required of them.
+			if ( class_exists( 'FW_Forms_Conditions' ) && ! FW_Forms_Conditions::is_visible( $item, $items, $input_values ) ) {
+				continue;
+			}
+
 			$error = $item_types[ $item['type'] ]->frontend_validate( $item, $input_value );
 
 			if ( $error ) {
@@ -277,6 +301,13 @@ class FW_Option_Type_Form_Builder extends FW_Option_Type_Builder {
 
 			if ( isset( $values[ $shortcode ] ) ) {
 				trigger_error( 'Form item duplicate shortcode: ' . $shortcode, E_USER_WARNING );
+			}
+
+			// A field hidden by its "show only when…" rule is not collected, so it
+			// is neither stored nor emailed — whatever a stale tab may have posted.
+			if ( class_exists( 'FW_Forms_Conditions' ) && ! FW_Forms_Conditions::is_visible( $item, $items, $input_values ) ) {
+				$values[ $shortcode ] = null;
+				continue;
 			}
 
 			$values[ $shortcode ] = isset( $input_values[ $shortcode ] )

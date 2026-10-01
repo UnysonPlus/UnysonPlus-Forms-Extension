@@ -43,6 +43,9 @@ $options = array(
 		'type'    => 'tab',
 		'title'   => __( 'Settings', 'fw' ),
 		'options' => array(
+			// What happens after a successful submit — store, subscribe, … Each
+			// action (Forms' own and other extensions') contributes its own group.
+			'settings-actions' => class_exists( 'FW_Forms_Actions' ) ? FW_Forms_Actions::options_tab() : array( 'type' => 'hidden', 'value' => '' ),
 			'settings-options' => array(
 				'title'   => __( 'Options', 'fw' ),
 				'type'    => 'tab',

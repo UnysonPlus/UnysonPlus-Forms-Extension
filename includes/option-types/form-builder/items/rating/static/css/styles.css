@@ -1,0 +1,4 @@
+/* Rating — canvas preview */
+.fw-rating-preview--stars { font-size: 22px; letter-spacing: 2px; color: #dba617; }
+.fw-rating-preview--pills { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.fw-rating-preview__pill { display: inline-block; min-width: 26px; padding: 3px 0; text-align: center; border: 1px solid #c3c4c7; border-radius: 4px; font-size: 12px; background: #fff; }

@@ -20,7 +20,7 @@
 $manifest = array();
 
 $manifest['name'] = __('Contact Forms', 'fw');
-$manifest['version'] = '1.0.5';
+$manifest['version'] = '1.0.6';
 $manifest['standalone'] = true;
 $manifest['display'] = false;
 $manifest['requirements']  = array(

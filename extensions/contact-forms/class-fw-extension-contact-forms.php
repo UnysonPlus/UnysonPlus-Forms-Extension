@@ -2,13 +2,46 @@
 
 class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 
-	public function _init() {}
+	public function _init() {
+		add_filter( 'fw_ext_forms_entry_form_title', array( $this, '_filter_entry_form_title' ), 10, 2 );
+		add_filter( 'fw_ext_forms_form_settings', array( $this, '_filter_form_settings' ), 10, 2 );
+	}
+
+	/**
+	 * @internal
+	 * Actions read their per-form options from the element's saved atts, which
+	 * this form type keeps in its own option row. Only we know that.
+	 */
+	public function _filter_form_settings( $settings, $data ) {
+		if ( ( $data['type'] ?? '' ) !== $this->get_name() ) {
+			return $settings;
+		}
+
+		$form = $this->get_form_db_data( (string) ( $data['id'] ?? '' ) );
+
+		return is_array( $form ) ? $form : $settings;
+	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_form_builder_type() {
 		return 'form-builder';
+	}
+
+	/**
+	 * @internal
+	 * The Entries screen asks each form type for a human title; ours is the
+	 * email subject, the closest thing a contact form has to a name.
+	 */
+	public function _filter_entry_form_title( $title, $data ) {
+		if ( ( $data['type'] ?? '' ) !== $this->get_name() ) {
+			return $title;
+		}
+
+		$form = $this->get_form_db_data( (string) ( $data['id'] ?? '' ) );
+
+		return ! empty( $form['subject_message'] ) ? (string) $form['subject_message'] : $title;
 	}
 
 	public function get_form_builder_value( $form_id ) {
