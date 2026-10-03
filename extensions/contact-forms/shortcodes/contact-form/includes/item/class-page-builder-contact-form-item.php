@@ -35,20 +35,25 @@ class Page_Builder_Contact_Form_Item extends Page_Builder_Item {
 		);
 	}
 
+	/**
+	 * No palette button.
+	 *
+	 * The contact form reaches the builder twice over. This dedicated item type is
+	 * one route; the other is the generic "simple" path, which registers a button
+	 * for any shortcode whose config declares `'type' => 'simple'` -- and this
+	 * shortcode's config does, deliberately: it was changed from 'special' (an item
+	 * type nothing implements) because every converted contact form was opening as
+	 * "The shortcode contact_form not found". That fix was right, but it left two
+	 * identical "Contact form" buttons sitting in the same tab.
+	 *
+	 * The generic one is the one to keep, because it is what makes the element
+	 * editable. So this type registers no thumbnail -- while staying registered, so
+	 * pages already saved with `type: 'contact-form'` still load, render and edit.
+	 *
+	 * @return array
+	 */
 	protected function get_thumbnails_data() {
-		/**
-		 * @var FW_Shortcode_Contact_Form $shortcode
-		 */
-		$shortcode = fw_ext( 'shortcodes' )->get_shortcode( 'contact_form' );
-
-		$thumbnail = array(
-			'tab'         => __( 'Content Elements', 'fw' ),
-			'title'       => __( 'Contact form', 'fw' ),
-			'description' => __( 'Add a Contact Form', 'fw' ),
-			'icon'       => $shortcode->locate_URI( '/static/img/page_builder.png' ),
-		);
-
-		return array( shortcode_atts( $thumbnail, $shortcode->get_config( 'page_builder' ) ) );
+		return array();
 	}
 
 	public function get_value_from_attributes( $attributes ) {
