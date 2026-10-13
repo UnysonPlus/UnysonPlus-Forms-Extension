@@ -269,7 +269,7 @@ class FW_Forms_Entries_Capture {
 	/**
 	 * @return int
 	 */
-	private static function current_post_id() {
+	public static function current_post_id() {
 		// NOT wp_get_referer(): it returns false whenever the referer is the
 		// current page — which a form posting to its own page always is. The
 		// raw referer keeps that value; the request URI is the fallback.

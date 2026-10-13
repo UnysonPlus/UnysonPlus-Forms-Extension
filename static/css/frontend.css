@@ -512,3 +512,10 @@ body.rtl .wrap-forms .field-columns-3 .field-column {
 .wrap-forms .field-consent input[type="checkbox"] { width: auto; height: auto; min-height: 0; padding: 0; margin: .3em 0 0; flex: 0 0 auto; }
 .wrap-forms .field-consent label span { flex: 1 1 auto; width: auto; }
 .wrap-forms .field-consent a { text-decoration: underline; }
+
+/* The field rows use the grid's negative gutters, which reach 12px past the form on each side and,
+   with no padding around the form, widen the page (a sideways scroll on phones). Clip only that
+   empty gutter; the fields keep their alignment. */
+form.fw_form_fw_form {
+	overflow-x: clip;
+}

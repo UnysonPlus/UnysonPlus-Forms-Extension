@@ -219,9 +219,17 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 			}
 		}
 
+		// Dynamic Content tokens in the subject ({{post_title}}, …) refer to the page the form was sent from.
+		$subject = (string) fw_akg( 'subject_message', $form, '' );
+
+		if ( false !== strpos( $subject, '{{' ) && function_exists( 'fw_dynamic_content' ) ) {
+			$post_id = class_exists( 'FW_Forms_Entries_Capture' ) ? FW_Forms_Entries_Capture::current_post_id() : (int) get_queried_object_id();
+			$subject = html_entity_decode( fw_dynamic_content()->resolve( $subject, array( 'post_id' => $post_id ) ), ENT_QUOTES, get_bloginfo( 'charset' ) );
+		}
+
 		$result = fw_ext_mailer_send_mail(
 			$to,
-			fw_akg( 'subject_message', $form, '' ),
+			$subject,
 			$this->render_view( 'email', $entry_data ),
 			$entry_data
 		);
@@ -235,6 +243,33 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 				fw_akg( 'success_message', $form, __( 'Message sent!', 'fw' ) ),
 				'success'
 			);
+		} elseif ( $this->entry_will_be_stored( $form_id ) ) {
+			// The submission is kept as an entry, so the visitor's message did arrive: telling them
+			// it failed would only make them send it again. The site owner sees the failure on the
+			// entry instead.
+			$mail_error = (string) ( $result['message'] ?? '' );
+
+			add_filter( 'fw_ext_forms_entry_before_insert', function ( $entry ) use ( $mail_error ) {
+				if ( is_array( $entry ) && isset( $entry['fields'] ) && is_array( $entry['fields'] ) ) {
+					$entry['fields'][] = array(
+						'id'    => '_notification',
+						'type'  => 'notice',
+						'label' => __( 'Notification email', 'fw' ),
+						'value' => trim( __( 'Not sent.', 'fw' ) . ' ' . $mail_error ),
+					);
+				}
+
+				return $entry;
+			} );
+
+			/** Fires when a contact-form notification email fails but the submission is stored as an entry. */
+			do_action( 'fw:ext:contact-forms:mail-failed', $entry_data, $result );
+
+			FW_Flash_Messages::add(
+				$flash_id,
+				fw_akg( 'success_message', $form, __( 'Message sent!', 'fw' ) ),
+				'success'
+			);
 		} else {
 			FW_Flash_Messages::add(
 				$flash_id,
@@ -242,6 +277,31 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 				'error'
 			);
 		}
+	}
+
+	/**
+	 * Whether this submission will be kept under Form Entries (the global setting and the form's
+	 * own Store entry action), which runs after the email on the submit hook.
+	 *
+	 * @param string $form_id
+	 *
+	 * @return bool
+	 */
+	private function entry_will_be_stored( $form_id ) {
+		if ( ! class_exists( 'FW_Forms_Entries_Capture' ) || ! FW_Forms_Entries_Capture::enabled() ) {
+			return false;
+		}
+
+		if ( class_exists( 'FW_Forms_Actions' ) ) {
+			$actions = FW_Forms_Actions::all();
+			$form    = FW_Forms_Actions::form_settings( array( 'id' => $form_id, 'type' => $this->get_name() ) );
+
+			if ( isset( $actions['store'] ) && ! $actions['store']->is_enabled( $form ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
