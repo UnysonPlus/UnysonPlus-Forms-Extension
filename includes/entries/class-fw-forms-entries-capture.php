@@ -85,7 +85,8 @@ class FW_Forms_Entries_Capture {
 			return;
 		}
 
-		$fields = self::fields_from_submission( $values, $items );
+		$uploads = isset( $data['uploads'] ) && is_array( $data['uploads'] ) ? $data['uploads'] : array();
+		$fields  = self::fields_from_submission( $values, $items, $uploads );
 
 		if ( ! $fields ) {
 			return;
@@ -137,9 +138,11 @@ class FW_Forms_Entries_Capture {
 	 * @param array $values shortcode => submitted value
 	 * @param array $items  shortcode => builder item
 	 *
+	 * @param array $uploads shortcode => uploaded file info (File Upload fields)
+	 *
 	 * @return array [ { id, type, label, value }, … ]
 	 */
-	public static function fields_from_submission( array $values, array $items ) {
+	public static function fields_from_submission( array $values, array $items, array $uploads = array() ) {
 		$out = array();
 
 		// Builder order first; anything submitted without a matching item (a
@@ -168,6 +171,11 @@ class FW_Forms_Entries_Capture {
 			// data-request reviewer) needs no access to the form to interpret it.
 			if ( 'consent' === $type ) {
 				$row['purpose'] = sanitize_key( (string) ( $item['options']['purpose'] ?? '' ) );
+			}
+
+			// The stored file's name, so the entry screen can offer it for download.
+			if ( 'file-upload' === $type && ! empty( $uploads[ $shortcode ]['file'] ) ) {
+				$row['file'] = basename( (string) $uploads[ $shortcode ]['file'] );
 			}
 
 			$out[] = $row;
@@ -267,7 +275,8 @@ class FW_Forms_Entries_Capture {
 		// raw referer keeps that value; the request URI is the fallback.
 		$candidates = array(
 			wp_get_raw_referer(),
-			isset( $_SERVER['REQUEST_URI'] ) ? home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '',
+			// Scheme and host only: REQUEST_URI already includes a subfolder install's folder.
+			isset( $_SERVER['REQUEST_URI'] ) ? preg_replace( '#^(https?://[^/]+).*$#i', '$1', home_url() ) . wp_unslash( $_SERVER['REQUEST_URI'] ) : '',
 		);
 
 		foreach ( $candidates as $url ) {

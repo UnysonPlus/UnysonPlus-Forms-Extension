@@ -306,13 +306,35 @@ class FW_Option_Type_Form_Builder_Item_File_Upload extends FW_Option_Type_Form_B
 				}
 			}
 
+			// Submissions often hold personal documents (a CV, an ID), so they go to a private
+			// folder rather than the public media folders, under an unguessable name.
+			$original = sanitize_file_name( (string) $file['name'] );
+			$private  = class_exists( 'FW_Forms_Entries' ) ? FW_Forms_Entries::upload_dir() : null;
+			$to_dir   = null;
+
+			if ( $private ) {
+				$file['name'] = wp_generate_password( 24, false, false ) . '-' . $original;
+				$to_dir       = function ( $dirs ) use ( $private ) {
+					$dirs['path']   = $private['path'];
+					$dirs['url']    = $private['url'];
+					$dirs['subdir'] = '';
+
+					return $dirs;
+				};
+				add_filter( 'upload_dir', $to_dir );
+			}
+
 			$moved = wp_handle_upload( $file, $overrides );
+
+			if ( $to_dir ) {
+				remove_filter( 'upload_dir', $to_dir );
+			}
 
 			if ( is_array( $moved ) && empty( $moved['error'] ) && ! empty( $moved['file'] ) ) {
 				$uploads[ $shortcode ] = array(
-					'name' => sanitize_file_name( (string) $file['name'] ),
+					'name' => $original,
 					'file' => $moved['file'],
-					'url'  => $moved['url'] ?? '',
+					'url'  => $private ? '' : ( $moved['url'] ?? '' ),
 					'type' => $moved['type'] ?? '',
 				);
 			}

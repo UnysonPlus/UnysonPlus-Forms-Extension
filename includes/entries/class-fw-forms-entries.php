@@ -90,6 +90,19 @@ class FW_Forms_Entries {
 			return 0;
 		}
 
+		// Uploaded files belong to their entry: they go when it goes.
+		foreach ( $ids as $id ) {
+			$entry = self::find( $id );
+
+			if ( $entry && is_array( $entry->fields ) ) {
+				foreach ( $entry->fields as $field ) {
+					if ( ! empty( $field['file'] ) && ( $path = self::upload_path( $field['file'] ) ) ) {
+						wp_delete_file( $path );
+					}
+				}
+			}
+		}
+
 		$in = implode( ',', $ids );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- ids are cast to int above.
@@ -112,7 +125,61 @@ class FW_Forms_Entries {
 			return 0;
 		}
 
-		return (int) $wpdb->query( $wpdb->prepare( 'DELETE FROM ' . self::table() . ' WHERE email = %s', $email ) );
+		// Through delete() so the entries' uploaded files are removed too.
+		return self::delete( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM ' . self::table() . ' WHERE email = %s', $email ) ) );
+	}
+
+	/**
+	 * Where File Upload fields store their files: uploads/unysonplus/form-uploads/, kept out of
+	 * reach of the web (files are downloaded through wp-admin only) and named with a random
+	 * prefix so they cannot be guessed on servers that ignore .htaccess.
+	 *
+	 * @return array{path:string,url:string}
+	 */
+	public static function upload_dir() {
+		if ( function_exists( 'fw_upw_uploads_dir' ) ) {
+			$dir = fw_upw_uploads_dir( 'form-uploads' );
+		} else {
+			$up  = wp_upload_dir();
+			$dir = array( 'path' => $up['basedir'] . '/unysonplus/form-uploads', 'url' => $up['baseurl'] . '/unysonplus/form-uploads' );
+		}
+
+		if ( ! is_dir( $dir['path'] ) ) {
+			wp_mkdir_p( $dir['path'] );
+		}
+
+		$guards = array(
+			'.htaccess'  => "# Form uploads are private: they are downloaded through wp-admin only.\n<IfModule mod_authz_core.c>\n\tRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n\tOrder allow,deny\n\tDeny from all\n</IfModule>\n",
+			'web.config' => "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<configuration><system.webServer><authorization><deny users=\"*\" /></authorization></system.webServer></configuration>\n",
+			'index.php'  => "<?php\n// Silence is golden.\n",
+		);
+
+		foreach ( $guards as $name => $body ) {
+			if ( ! file_exists( $dir['path'] . '/' . $name ) ) {
+				@file_put_contents( $dir['path'] . '/' . $name, $body ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			}
+		}
+
+		return $dir;
+	}
+
+	/**
+	 * Absolute path of a stored upload, or '' when the name is not a file in the upload folder.
+	 *
+	 * @param string $name Stored file name (no directories).
+	 *
+	 * @return string
+	 */
+	public static function upload_path( $name ) {
+		$name = basename( (string) $name );
+
+		if ( '' === $name || '.' === $name[0] ) {
+			return '';
+		}
+
+		$path = self::upload_dir()['path'] . '/' . $name;
+
+		return is_file( $path ) ? $path : '';
 	}
 
 	/**
@@ -133,7 +200,8 @@ class FW_Forms_Entries {
 
 		$cutoff = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - ( $days * DAY_IN_SECONDS ) );
 
-		return (int) $wpdb->query( $wpdb->prepare( 'DELETE FROM ' . self::table() . ' WHERE created_at < %s', $cutoff ) );
+		// Through delete() so the entries' uploaded files are removed too.
+		return self::delete( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM ' . self::table() . ' WHERE created_at < %s', $cutoff ) ) );
 	}
 
 	/* ---------------------------------------------------------------------- *

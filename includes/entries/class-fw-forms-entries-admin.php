@@ -27,6 +27,65 @@ class FW_Forms_Entries_Admin {
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, '_action_admin_menu' ) );
 		add_filter( 'set-screen-option', array( $this, '_filter_screen_option' ), 10, 3 );
+		add_action( 'admin_post_fw_forms_entry_file', array( $this, '_action_download_file' ) );
+	}
+
+	/**
+	 * Download link for a File Upload field's stored file.
+	 *
+	 * @param int    $entry_id
+	 * @param string $field_id
+	 *
+	 * @return string
+	 */
+	public static function file_url( $entry_id, $field_id ) {
+		return wp_nonce_url(
+			add_query_arg( array( 'action' => 'fw_forms_entry_file', 'entry' => (int) $entry_id, 'field' => rawurlencode( (string) $field_id ) ), admin_url( 'admin-post.php' ) ),
+			'fw_forms_entry_file_' . (int) $entry_id
+		);
+	}
+
+	/**
+	 * Streams an uploaded file to someone allowed to see entries. Uploads are kept out of reach
+	 * of the web, so this is the only way to open one.
+	 *
+	 * @internal
+	 */
+	public function _action_download_file() {
+		$entry_id = isset( $_GET['entry'] ) ? (int) $_GET['entry'] : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$field_id = isset( $_GET['field'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['field'] ) ) ) : ''; // phpcs:ignore
+
+		if ( ! current_user_can( self::capability() ) ) {
+			wp_die( esc_html__( 'You are not allowed to download this file.', 'fw' ), '', array( 'response' => 403 ) );
+		}
+
+		check_admin_referer( 'fw_forms_entry_file_' . $entry_id );
+
+		$entry = FW_Forms_Entries::find( $entry_id );
+		$field = null;
+
+		foreach ( ( $entry && is_array( $entry->fields ) ) ? $entry->fields : array() as $f ) {
+			if ( isset( $f['id'] ) && (string) $f['id'] === $field_id && ! empty( $f['file'] ) ) {
+				$field = $f;
+				break;
+			}
+		}
+
+		$path = $field ? FW_Forms_Entries::upload_path( $field['file'] ) : '';
+
+		if ( '' === $path ) {
+			wp_die( esc_html__( 'That file no longer exists.', 'fw' ), '', array( 'response' => 404 ) );
+		}
+
+		$name = sanitize_file_name( is_string( $field['value'] ) && '' !== $field['value'] ? $field['value'] : basename( $path ) );
+
+		nocache_headers();
+		header( 'Content-Type: application/octet-stream' );
+		header( 'Content-Disposition: attachment; filename="' . $name . '"' );
+		header( 'Content-Length: ' . filesize( $path ) );
+		header( 'X-Content-Type-Options: nosniff' );
+		readfile( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+		exit;
 	}
 
 	/* ---------------------------------------------------------------------- *
@@ -390,6 +449,8 @@ class FW_Forms_Entries_Admin {
 							<?php
 							if ( is_array( $f['value'] ) ) {
 								echo esc_html( implode( ', ', $f['value'] ) );
+							} elseif ( ! empty( $f['file'] ) ) {
+								echo esc_html( $f['value'] ) . ' &nbsp;<a class="button button-small" href="' . esc_url( self::file_url( $entry->id, $f['id'] ) ) . '">' . esc_html__( 'Download', 'fw' ) . '</a>';
 							} elseif ( 'email' === $f['type'] && is_email( $f['value'] ) ) {
 								echo '<a href="mailto:' . esc_attr( $f['value'] ) . '">' . esc_html( $f['value'] ) . '</a>';
 							} else {

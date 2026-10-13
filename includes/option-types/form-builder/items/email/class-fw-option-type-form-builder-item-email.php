@@ -191,8 +191,10 @@ class FW_Option_Type_Form_Builder_Item_Email extends FW_Option_Type_Form_Builder
 		// prepare attributes
 		{
 			$attr = array(
-				'type'        => 'text',
-				'name'        => $item['shortcode'] ?? '',
+				// A real email input: the right keyboard on phones, autofill, and the browser's own check.
+				'type'         => 'email',
+				'autocomplete' => 'email',
+				'name'         => $item['shortcode'] ?? '',
 				'placeholder' => $options['placeholder'] ?? '',
 				'value'       => is_null( $input_value ) ? '' : $input_value,
 				'id'          => 'id-' . fw_unique_increment(),

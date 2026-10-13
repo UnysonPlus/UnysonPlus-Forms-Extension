@@ -109,7 +109,13 @@ class FW_Option_Type_Form_Builder_Item_Hidden extends FW_Option_Type_Form_Builde
 	private function page_url() {
 		// On render this is the page itself; on submit the form posted back to
 		// the same page, so the request URI is still it.
-		return isset( $_SERVER['REQUEST_URI'] ) ? home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : home_url( '/' );
+		// REQUEST_URI already holds the full path (including the folder on a site installed in a
+		// subfolder), so join it to the site's scheme and host only; home_url() would add the folder twice.
+		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+			return home_url( '/' );
+		}
+
+		return preg_replace( '#^(https?://[^/]+).*$#i', '$1', home_url() ) . wp_unslash( $_SERVER['REQUEST_URI'] );
 	}
 
 	public function frontend_render( array $item, $input_value ) {

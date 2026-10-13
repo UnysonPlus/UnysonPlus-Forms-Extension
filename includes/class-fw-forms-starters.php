@@ -43,7 +43,8 @@ class FW_Forms_Starters {
 	public static function all() {
 		$t = array(
 			'contact'      => array( 'title' => __( 'Contact', 'fw' ),           'items' => self::contact() ),
-			'booking'      => array( 'title' => __( 'Booking / Appointment', 'fw' ), 'items' => self::booking() ),
+			'appointment'  => array( 'title' => __( 'Appointment request', 'fw' ), 'items' => self::appointment() ),
+			'booking'      => array( 'title' => __( 'Table booking (restaurant)', 'fw' ), 'items' => self::booking() ),
 			'quote'        => array( 'title' => __( 'Quote request', 'fw' ),     'items' => self::quote() ),
 			'registration' => array( 'title' => __( 'Event registration', 'fw' ), 'items' => self::registration() ),
 			'support'      => array( 'title' => __( 'Support ticket', 'fw' ),    'items' => self::support() ),
@@ -71,6 +72,26 @@ class FW_Forms_Starters {
 			self::email( '1_2' ),
 			self::textarea( 'message', __( 'Message', 'fw' ), true ),
 			self::consent_terms(),
+		);
+	}
+
+	/**
+	 * A request for an appointment, consultation or visit: the person asks, the business confirms.
+	 * No free-text "anything we should know" box, so it suits clinics, salons and law firms, where
+	 * the form must not invite health or confidential details.
+	 */
+	private static function appointment() {
+		return array(
+			self::header( __( 'Request an appointment', 'fw' ) ),
+			self::text( 'name', __( 'Your name', 'fw' ), true, '1_2' ),
+			self::email( '1_2' ),
+			self::text( 'phone', __( 'Phone', 'fw' ), true, '1_2' ),
+			self::select( 'service', __( 'What is it for?', 'fw' ), array( __( 'Option A', 'fw' ), __( 'Option B', 'fw' ), __( 'Something else', 'fw' ) ), '1_2' ),
+			self::date( 'date', __( 'Preferred date', 'fw' ), 'date', '1_2', array( 'min' => 'today' ) ),
+			self::select( 'time', __( 'Preferred time', 'fw' ), array( __( 'Morning', 'fw' ), __( 'Afternoon', 'fw' ), __( 'Evening', 'fw' ), __( 'Any time', 'fw' ) ), '1_2' ),
+			self::radio( 'customer', __( 'Have you been to us before?', 'fw' ), array( __( 'Yes', 'fw' ), __( 'No, this is my first time', 'fw' ) ) ),
+			self::consent_terms(),
+			self::consent_newsletter(),
 		);
 	}
 

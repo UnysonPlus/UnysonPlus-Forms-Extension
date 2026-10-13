@@ -281,6 +281,12 @@ class FW_Extension_Forms extends FW_Extension {
 		 */
 		$fw_form_data['redirect'] = fw_current_url();
 
+		// Remember which form was sent for the page that follows the redirect, so its success or
+		// error message is shown next to THAT form rather than the first form on the page.
+		if ( ! headers_sent() && is_string( $form_id ) && preg_match( '/^[A-Za-z0-9_-]{1,64}$/', $form_id ) ) {
+			setcookie( 'fw_ext_forms_last', $form_id, time() + 120, COOKIEPATH ? COOKIEPATH : '/', COOKIE_DOMAIN, is_ssl(), false );
+		}
+
 		/**
 		 * @var FW_Ext_Forms_Type $form_instance
 		 */
@@ -383,6 +389,8 @@ class FW_Extension_Forms extends FW_Extension {
 			 */
 			'form_values'       => $form_values,
 			'attachments'       => $attachments,
+			/** Uploaded files by field shortcode: { name, file, url, type }. */
+			'uploads'           => is_array( $uploads ) ? $uploads : array(),
 		));
 
 		return $fw_form_data;
