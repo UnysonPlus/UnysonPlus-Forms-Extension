@@ -14,6 +14,7 @@ $options = $item['options'];
 		</label>
 		<?php endif; ?>
 		<?php if ( ! empty( $options['info'] ) && ! empty( $attr['id'] ) ) { $attr['aria-describedby'] = $attr['id'] . '-info'; } ?>
+		<?php if ( empty( $attr['autocomplete'] ) && class_exists( 'FW_Forms_Autocomplete' ) ) { $attr += FW_Forms_Autocomplete::for_label( $options['label'] ?? '' ); } ?>
 		<input <?php echo fw_attr_to_html($attr) ?>>
 		<?php if ($options['info']): ?>
 			<p class="field-info" id="<?php echo esc_attr( $attr['id'] ) ?>-info"><em><?php echo esc_html( $options['info'] ) ?></em></p>

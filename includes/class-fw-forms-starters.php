@@ -41,20 +41,43 @@ class FW_Forms_Starters {
 	 * @return array id => { title, items }
 	 */
 	public static function all() {
+		// title, items; plus, for the form-type picker: desc (one line), icon (dashicon), group, and the
+		// suggested subject / button / thank-you text a new form starts with. Never actions.
+		$s = function ( $title, $items, $desc, $icon, $group, $subject, $button, $success ) {
+			return array(
+				'title'    => $title,
+				'items'    => $items,
+				'desc'     => $desc,
+				'icon'     => $icon,
+				'group'    => $group,
+				'settings' => array( 'subject_message' => $subject, 'submit_button_text' => $button, 'success_message' => $success ),
+			);
+		};
 		$t = array(
-			'contact'      => array( 'title' => __( 'Contact', 'fw' ),           'items' => self::contact() ),
-			'appointment'  => array( 'title' => __( 'Appointment request', 'fw' ), 'items' => self::appointment() ),
-			'booking'      => array( 'title' => __( 'Table booking (restaurant)', 'fw' ), 'items' => self::booking() ),
-			'quote'        => array( 'title' => __( 'Quote request', 'fw' ),     'items' => self::quote() ),
-			'registration' => array( 'title' => __( 'Event registration', 'fw' ), 'items' => self::registration() ),
-			'support'      => array( 'title' => __( 'Support ticket', 'fw' ),    'items' => self::support() ),
-			'feedback'     => array( 'title' => __( 'Feedback (CSAT)', 'fw' ),   'items' => self::feedback() ),
-			'nps'          => array( 'title' => __( 'NPS survey', 'fw' ),        'items' => self::nps() ),
-			'signup'       => array( 'title' => __( 'Newsletter signup', 'fw' ), 'items' => self::signup() ),
+			'contact'      => $s( __( 'Contact', 'fw' ), self::contact(), __( 'Name, email and a message.', 'fw' ), 'email-alt', 'enquiries', __( 'New message from {text_name}', 'fw' ), __( 'Send message', 'fw' ), __( 'Thanks, {text_name}. We will get back to you soon.', 'fw' ) ),
+			'quote'        => $s( __( 'Quote request', 'fw' ), self::quote(), __( 'Service, budget, deadline and project details.', 'fw' ), 'money-alt', 'enquiries', __( 'Quote request from {text_name}', 'fw' ), __( 'Request a quote', 'fw' ), __( 'Thanks, {text_name}. We will send your quote shortly.', 'fw' ) ),
+			'callback'     => $s( __( 'Callback request', 'fw' ), self::callback(), __( 'A phone number and the best time to call.', 'fw' ), 'phone', 'enquiries', __( 'Callback request from {text_name}', 'fw' ), __( 'Call me back', 'fw' ), __( 'Thanks, {text_name}. We will call you at the time you chose.', 'fw' ) ),
+			'product'      => $s( __( 'Product enquiry', 'fw' ), self::product(), __( 'Which product, how many, and any questions.', 'fw' ), 'cart', 'enquiries', __( 'Product enquiry from {text_name}', 'fw' ), __( 'Send enquiry', 'fw' ), __( 'Thanks, {text_name}. We will reply with the details.', 'fw' ) ),
+			'support'      => $s( __( 'Support ticket', 'fw' ), self::support(), __( 'Order number, category, urgency and a screenshot.', 'fw' ), 'sos', 'enquiries', __( 'Support request from {text_name}', 'fw' ), __( 'Open ticket', 'fw' ), __( 'Thanks, {text_name}. Your ticket is open; we will be in touch.', 'fw' ) ),
+			'appointment'  => $s( __( 'Appointment request', 'fw' ), self::appointment(), __( 'Service, preferred date and time. No free-text box.', 'fw' ), 'calendar-alt', 'bookings', __( 'Appointment request from {text_name}', 'fw' ), __( 'Request appointment', 'fw' ), __( 'Thanks, {text_name}. We will confirm your appointment.', 'fw' ) ),
+			'booking'      => $s( __( 'Table booking (restaurant)', 'fw' ), self::booking(), __( 'Party size, date and time.', 'fw' ), 'food', 'bookings', __( 'Table booking from {text_name}', 'fw' ), __( 'Book a table', 'fw' ), __( 'Thanks, {text_name}. We will confirm your table.', 'fw' ) ),
+			'registration' => $s( __( 'Event registration', 'fw' ), self::registration(), __( 'In person or online, sessions and access needs.', 'fw' ), 'tickets-alt', 'events', __( 'Event registration: {text_name}', 'fw' ), __( 'Register', 'fw' ), __( 'Thanks, {text_name}. You are registered.', 'fw' ) ),
+			'rsvp'         => $s( __( 'RSVP', 'fw' ), self::rsvp(), __( 'Attending or not, number of guests, dietary needs.', 'fw' ), 'groups', 'events', __( 'RSVP from {text_name}', 'fw' ), __( 'Send RSVP', 'fw' ), __( 'Thanks, {text_name}. Your reply is in.', 'fw' ) ),
+			'job'          => $s( __( 'Job application', 'fw' ), self::job(), __( 'Position, CV upload, links and availability.', 'fw' ), 'id-alt', 'applications', __( 'Job application: {text_name}', 'fw' ), __( 'Apply', 'fw' ), __( 'Thanks, {text_name}. We have your application.', 'fw' ) ),
+			'volunteer'    => $s( __( 'Volunteer sign-up', 'fw' ), self::volunteer(), __( 'Areas of interest and when they are free.', 'fw' ), 'heart', 'applications', __( 'New volunteer: {text_name}', 'fw' ), __( 'Sign up', 'fw' ), __( 'Thanks, {text_name}. We will be in touch about volunteering.', 'fw' ) ),
+			'feedback'     => $s( __( 'Feedback (CSAT)', 'fw' ), self::feedback(), __( 'Star ratings and what could be better.', 'fw' ), 'star-filled', 'surveys', __( 'New feedback', 'fw' ), __( 'Send feedback', 'fw' ), __( 'Thank you for your feedback.', 'fw' ) ),
+			'nps'          => $s( __( 'NPS survey', 'fw' ), self::nps(), __( 'The 0 to 10 "would you recommend us" question.', 'fw' ), 'chart-bar', 'surveys', __( 'New NPS response', 'fw' ), __( 'Send', 'fw' ), __( 'Thank you for your answer.', 'fw' ) ),
+			'signup'       => $s( __( 'Newsletter signup', 'fw' ), self::signup(), __( 'First name, email and an opt-in.', 'fw' ), 'megaphone', 'marketing', __( 'New newsletter signup', 'fw' ), __( 'Subscribe', 'fw' ), __( 'Thanks for subscribing.', 'fw' ) ),
+			'download'     => $s( __( 'Download (lead magnet)', 'fw' ), self::download(), __( 'A guide or file in return for an email address.', 'fw' ), 'download', 'marketing', __( 'Download request from {text_name}', 'fw' ), __( 'Get the download', 'fw' ), __( 'Thanks, {text_name}. Your download is on its way.', 'fw' ) ),
+			// Turn on Settings → Actions → Take payment to charge the total.
+			'order'        => $s( __( 'Order form', 'fw' ), self::order(), __( 'Products with prices and quantities, a live total.', 'fw' ), 'cart', 'payments', __( 'New order from {text_name}: {order_total}', 'fw' ), __( 'Place order', 'fw' ), __( 'Thanks, {text_name}. Your order comes to {order_total}. {payment_instructions}', 'fw' ) ),
+			'donation'     => $s( __( 'Donation', 'fw' ), self::donation(), __( 'Suggested amounts or their own, and a note.', 'fw' ), 'heart', 'payments', __( 'New donation from {text_name}: {order_total}', 'fw' ), __( 'Donate', 'fw' ), __( 'Thank you, {text_name}, for your gift of {order_total}. {payment_instructions}', 'fw' ) ),
 		);
 
 		/**
-		 * Add or remove form starters.
+		 * Add or remove form starters. Each: title, items, and optionally desc, icon (dashicon name),
+		 * group (enquiries | bookings | events | applications | surveys | marketing) and settings
+		 * (subject_message, submit_button_text, success_message).
 		 *
 		 * @param array $t
 		 */
@@ -184,6 +207,105 @@ class FW_Forms_Starters {
 		);
 	}
 
+	private static function order() {
+		return array(
+			self::header( __( 'Place an order', 'fw' ) ),
+			self::item( 'product', 'main', array(
+				'label' => __( 'Choose your product', 'fw' ), 'required' => true, 'mode' => 'choices', 'display' => 'radio', 'quantity' => 'box', 'qty_min' => '1', 'qty_max' => '10',
+				'choices' => array( array( 'name' => __( 'Standard', 'fw' ), 'price' => '25' ), array( 'name' => __( 'Deluxe', 'fw' ), 'price' => '45' ) ),
+			) ),
+			self::item( 'product', 'gift', array( 'label' => __( 'Gift wrapping', 'fw' ), 'required' => false, 'mode' => 'single', 'price' => '5', 'quantity' => 'checkbox' ) ),
+			self::item( 'calculation', 'total', array( 'label' => __( 'Total', 'fw' ), 'formula' => '{product_main} + {product_gift}', 'format' => 'money', 'add_to_total' => 'no', 'visible' => 'yes' ) ),
+			self::text( 'name', __( 'Your name', 'fw' ), true, '1_2' ),
+			self::email( '1_2' ),
+			self::textarea( 'notes', __( 'Delivery notes', 'fw' ) ),
+		);
+	}
+
+	private static function donation() {
+		return array(
+			self::header( __( 'Make a donation', 'fw' ) ),
+			self::item( 'amount', 'gift', array( 'label' => __( 'Your gift', 'fw' ), 'required' => true, 'suggested' => '10, 25, 50, 100', 'allow_other' => 'yes', 'min' => '1', 'max' => '' ) ),
+			self::text( 'name', __( 'Your name', 'fw' ), true, '1_2' ),
+			self::email( '1_2' ),
+			self::textarea( 'message', __( 'A message (optional)', 'fw' ) ),
+		);
+	}
+
+	private static function callback() {
+		return array(
+			self::header( __( 'Request a callback', 'fw' ) ),
+			self::text( 'name', __( 'Your name', 'fw' ), true, '1_2' ),
+			self::text( 'phone', __( 'Phone number', 'fw' ), true, '1_2' ),
+			self::select( 'when', __( 'Best time to call', 'fw' ), array( __( 'Morning', 'fw' ), __( 'Lunchtime', 'fw' ), __( 'Afternoon', 'fw' ), __( 'Evening', 'fw' ), __( 'Any time', 'fw' ) ), '1_2' ),
+			self::text( 'topic', __( 'What is it about?', 'fw' ), false, '1_2' ),
+			self::consent_terms(),
+		);
+	}
+
+	private static function product() {
+		return array(
+			self::header( __( 'Ask about a product', 'fw' ) ),
+			self::text( 'name', __( 'Your name', 'fw' ), true, '1_2' ),
+			self::email( '1_2' ),
+			self::text( 'product', __( 'Product', 'fw' ), true, '1_2' ),
+			self::item( 'number', 'quantity', array( 'label' => __( 'Quantity', 'fw' ), 'required' => false ), '1_2' ),
+			self::textarea( 'question', __( 'Your question', 'fw' ), true ),
+			self::hidden( 'source', __( 'Source', 'fw' ) ),
+			self::consent_terms(),
+		);
+	}
+
+	private static function rsvp() {
+		return array(
+			self::header( __( 'Will you join us?', 'fw' ) ),
+			self::text( 'name', __( 'Your name', 'fw' ), true, '1_2' ),
+			self::email( '1_2' ),
+			self::radio( 'attending', __( 'Will you attend?', 'fw' ), array( __( 'Yes, I will be there', 'fw' ), __( 'Sorry, I cannot make it', 'fw' ) ) ),
+			self::select( 'guests', __( 'Number of guests (including you)', 'fw' ), array( '1', '2', '3', '4', '5+' ), '1_2' ),
+			self::textarea( 'dietary', __( 'Dietary or access needs', 'fw' ), false ),
+			self::consent_terms(),
+		);
+	}
+
+	private static function job() {
+		return array(
+			self::header( __( 'Apply for the role', 'fw' ) ),
+			self::text( 'name', __( 'Full name', 'fw' ), true, '1_2' ),
+			self::email( '1_2' ),
+			self::text( 'phone', __( 'Phone number', 'fw' ), false, '1_2' ),
+			self::select( 'position', __( 'Position', 'fw' ), array( __( 'Role A', 'fw' ), __( 'Role B', 'fw' ), __( 'Open application', 'fw' ) ), '1_2' ),
+			self::item( 'file-upload', 'cv', array( 'label' => __( 'CV (PDF or Word)', 'fw' ), 'required' => true ) ),
+			self::item( 'website', 'portfolio', array( 'label' => __( 'Portfolio or LinkedIn (optional)', 'fw' ), 'required' => false ) ),
+			self::date( 'start', __( 'Earliest start date', 'fw' ), 'date', '1_2', array( 'min' => 'today' ), false ),
+			self::textarea( 'cover', __( 'Why this role?', 'fw' ), false ),
+			self::consent_terms(),
+		);
+	}
+
+	private static function volunteer() {
+		return array(
+			self::header( __( 'Volunteer with us', 'fw' ) ),
+			self::text( 'name', __( 'Your name', 'fw' ), true, '1_2' ),
+			self::email( '1_2' ),
+			self::text( 'phone', __( 'Phone number', 'fw' ), false, '1_2' ),
+			self::checkboxes( 'areas', __( 'What would you like to help with?', 'fw' ), array( __( 'Events', 'fw' ), __( 'Fundraising', 'fw' ), __( 'Admin', 'fw' ), __( 'Outreach', 'fw' ) ) ),
+			self::checkboxes( 'when', __( 'When are you free?', 'fw' ), array( __( 'Weekday mornings', 'fw' ), __( 'Weekday evenings', 'fw' ), __( 'Weekends', 'fw' ) ) ),
+			self::textarea( 'experience', __( 'Any relevant experience?', 'fw' ), false ),
+			self::consent_terms(),
+			self::consent_newsletter(),
+		);
+	}
+
+	private static function download() {
+		return array(
+			self::header( __( 'Get the free guide', 'fw' ) ),
+			self::text( 'name', __( 'First name', 'fw' ), false, '1_2' ),
+			self::email( '1_2' ),
+			self::consent_newsletter( __( 'Also send me the newsletter. I can unsubscribe at any time.', 'fw' ) ),
+		);
+	}
+
 	/* ---------------------------------------------------------------------- *
 	 * Item shorthands
 	 * ---------------------------------------------------------------------- */
@@ -249,7 +371,7 @@ class FW_Forms_Starters {
 	 *
 	 * @return array
 	 */
-	private static function normalize( array $items ) {
+	public static function normalize( array $items ) {
 		$builder = fw()->backend->option_type( 'form-builder' );
 
 		if ( ! $builder ) {

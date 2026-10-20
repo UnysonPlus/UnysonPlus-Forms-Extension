@@ -149,7 +149,7 @@ class FW_Option_Type_Form_Builder_Item_Radio extends FW_Option_Type_Form_Builder
 				'info' => array(
 					'type'  => 'textarea',
 					'label' => __( 'Help Text', 'fw' ),
-					'desc'  => __( 'Help text shown under the field, e.g. âA sentence or two is plenty.â It is linked to the field for screen readers.', 'fw' ),
+					'desc'  => __( 'Help text shown under the field, e.g. “A sentence or two is plenty.” It is linked to the field for screen readers.', 'fw' ),
 				)
 			),
 			$this->get_extra_options()

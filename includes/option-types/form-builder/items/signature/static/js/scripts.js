@@ -1,0 +1,7 @@
+fwEvents.on('fw-builder:form-builder:register-items', function (builder) {
+	fwFormBuilderSimpleItem(builder, 'signature', {
+		preview: function () {
+			return '<div style="height:60px;border:1px dashed #c3c4c7;border-radius:6px;display:flex;align-items:flex-end;padding:6px 10px;font-style:italic;opacity:.7">Sign here</div>';
+		}
+	});
+});

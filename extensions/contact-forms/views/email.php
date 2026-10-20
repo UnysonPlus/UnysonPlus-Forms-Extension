@@ -26,6 +26,11 @@
 		$title = isset( $item_options['label'] ) ? fw_htmlspecialchars( (string) $item_options['label'] ) : '';
 		$value = '';
 
+		// A secret (a password) is never emailed.
+		if ( class_exists( 'FW_Forms_Entries_Capture' ) && in_array( $item['type'], FW_Forms_Entries_Capture::secret_types(), true ) ) {
+			continue;
+		}
+
 		switch ( $item['type'] ) {
 			case 'checkboxes':
 				if ( ! is_array( $form_value ) || empty( $form_value ) ) {
@@ -61,6 +66,10 @@
 				$value = '<pre style="font-family:arial,sans-serif;font-size:100%;">'. fw_htmlspecialchars( (string) ( $form_value ?? '' ) ) .'</pre>';
 				break;
 			case 'recaptcha':
+			case 'turnstile':
+			case 'hcaptcha':
+			case 'section':
+			case 'page-break':
 			case 'honeypot':
 				continue 2;
 			case 'file-upload':

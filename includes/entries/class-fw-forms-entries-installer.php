@@ -16,7 +16,7 @@
  */
 class FW_Forms_Entries_Installer {
 
-	const DB_VERSION        = '1.0.0';
+	const DB_VERSION        = '1.2.0';
 	const DB_VERSION_OPTION = 'fw_ext_forms_entries_db_version';
 
 	/**
@@ -58,12 +58,20 @@ class FW_Forms_Entries_Installer {
 	status varchar(20) NOT NULL default 'new',
 	ip varchar(45) NOT NULL default '',
 	user_agent varchar(255) NOT NULL default '',
+	starred tinyint(1) NOT NULL default 0,
+	assigned_to bigint(20) unsigned NOT NULL default 0,
+	user_id bigint(20) unsigned NOT NULL default 0,
+	approval varchar(10) NOT NULL default '',
+	raw_values longtext NULL,
 	created_at datetime NOT NULL default '0000-00-00 00:00:00',
 	PRIMARY KEY  (id),
 	KEY form_id (form_id),
 	KEY email (email),
 	KEY status (status),
-	KEY created_at (created_at)
+	KEY created_at (created_at),
+	KEY assigned_to (assigned_to),
+	KEY user_id (user_id),
+	KEY approval (approval)
 ) {$collate};" );
 
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION, true );

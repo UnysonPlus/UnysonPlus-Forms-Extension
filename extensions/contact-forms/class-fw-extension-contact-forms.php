@@ -41,7 +41,15 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 
 		$form = $this->get_form_db_data( (string) ( $data['id'] ?? '' ) );
 
-		return ! empty( $form['subject_message'] ) ? (string) $form['subject_message'] : $title;
+		if ( empty( $form['subject_message'] ) ) {
+			return $title;
+		}
+
+		// The title names the FORM, so it stays the same for every entry: answer tags and Dynamic
+		// Content tokens in the subject are dropped rather than filled in.
+		$name = trim( preg_replace( array( '/\{\{[^}]*\}\}/', '/\{[a-zA-Z0-9_\-]+\}/', '/\s{2,}/' ), array( '', '', ' ' ), (string) $form['subject_message'] ) );
+
+		return '' !== $name ? $name : $title;
 	}
 
 	public function get_form_builder_value( $form_id ) {
@@ -157,6 +165,11 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 
 		$form = $this->get_form_db_data( $form_id );
 
+		// No recipient set: send it to the site's admin address rather than failing the visitor.
+		if ( is_array( $form ) && empty( $form['email_to'] ) ) {
+			$form['email_to'] = (string) get_option( 'admin_email' );
+		}
+
 		if ( empty( $form ) || empty( $form['email_to'] ) ) {
 			FW_Flash_Messages::add(
 				$flash_id,
@@ -183,6 +196,13 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 			}
 		}
 
+		$items_map = (array) ( $data['shortcode_to_item'] ?? array() );
+
+		// Settings → Notifications: send it to someone else (or someone more) by answer.
+		if ( class_exists( 'FW_Forms_Notifications' ) ) {
+			$to = FW_Forms_Notifications::route( $form, $to, (array) $form_values, $items_map );
+		}
+
 		$to = implode( ',', $to );
 
 		$entry_data = array(
@@ -193,15 +213,27 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 			 *
 			 * @since 2.0.30
 			 */
-			'cc'  => apply_filters('fw:ext:contact-forms:email:cc',  array( /* 'john@smith.com' => 'John Smith' */ )),
+			'cc'  => apply_filters('fw:ext:contact-forms:email:cc',  self::address_map( $form['email_cc'] ?? '' )),
 			/**
 			 * Filters the BCC recipient map used when a contact-form submission email is sent.
 			 *
 			 * @since 2.0.30
 			 */
-			'bcc' => apply_filters('fw:ext:contact-forms:email:bcc', array( /* 'john@smith.com' => 'John Smith' */ )),
+			'bcc' => apply_filters('fw:ext:contact-forms:email:bcc', self::address_map( $form['email_bcc'] ?? '' )),
 			// Absolute paths of uploaded files (File Upload fields) → mailer attaches them.
-			'attachments' => $data['attachments'] ?? array(),
+			/**
+			 * Filters the notification email's attachments (absolute paths). Uploaded files are there
+			 * already; a PDF copy of the answers is added here when the form asks for one.
+			 *
+			 * @param string[] $attachments
+			 * @param array    $form The form's settings.
+			 * @param array    $data { form_values, shortcode_to_item, uploads }
+			 */
+			'attachments' => (array) apply_filters( 'fw_ext_forms_notification_attachments', $data['attachments'] ?? array(), $form, array(
+				'form_values'       => $form_values,
+				'shortcode_to_item' => $data['shortcode_to_item'] ?? array(),
+				'uploads'           => $data['uploads'] ?? array(),
+			) ),
 		);
 
 		/**
@@ -221,10 +253,53 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 
 		// Dynamic Content tokens in the subject ({{post_title}}, …) refer to the page the form was sent from.
 		$subject = (string) fw_akg( 'subject_message', $form, '' );
+		$post_id = class_exists( 'FW_Forms_Entries_Capture' ) ? FW_Forms_Entries_Capture::current_post_id() : (int) get_queried_object_id();
 
 		if ( false !== strpos( $subject, '{{' ) && function_exists( 'fw_dynamic_content' ) ) {
-			$post_id = class_exists( 'FW_Forms_Entries_Capture' ) ? FW_Forms_Entries_Capture::current_post_id() : (int) get_queried_object_id();
 			$subject = html_entity_decode( fw_dynamic_content()->resolve( $subject, array( 'post_id' => $post_id ) ), ENT_QUOTES, get_bloginfo( 'charset' ) );
+		}
+
+		// Answer tags ({text_name}, {all_fields}, …).
+		$tag = function ( $text, $mode ) use ( $form_values, $entry_data, $post_id ) {
+			return class_exists( 'FW_Forms_Merge_Tags' )
+				? FW_Forms_Merge_Tags::replace( $text, (array) $form_values, (array) $entry_data['shortcode_to_item'], $mode, $post_id )
+				: $text;
+		};
+		$subject = $tag( $subject, 'text' );
+		$success = $tag( (string) fw_akg( 'success_message', $form, __( 'Message sent!', 'fw' ) ), 'html' );
+
+		// Settings → Notifications: a different "after sending" when an answer matches.
+		$routed = class_exists( 'FW_Forms_Notifications' ) ? FW_Forms_Notifications::confirmation( $form, (array) $form_values, $items_map ) : null;
+		if ( $routed ) {
+			if ( 'url' === $routed['type'] && '' !== trim( $routed['url'] ) ) {
+				$form['confirmation_type'] = 'url';
+				$form['confirmation_url']  = $routed['url'];
+			} elseif ( '' !== trim( $routed['message'] ) ) {
+				$form['confirmation_type'] = 'message';
+				$success                   = $tag( $routed['message'], 'html' );
+			}
+		}
+
+		// Judged spam: the sender sees the usual success (a refusal would teach a bot what to change),
+		// nothing is emailed, and the entry is kept as Spam for review.
+		if ( class_exists( 'FW_Forms_Spam_Filter' ) && FW_Forms_Spam_Filter::is_spam( $form_id ) ) {
+			FW_Flash_Messages::add( $flash_id, $success, 'success' );
+
+			return self::confirmation( $form, $tag );
+		}
+
+		// Settings → Notifications → More notifications: their own recipients and wording, sent even
+		// when the main notification is off.
+		if ( class_exists( 'FW_Forms_Notifications' ) ) {
+			FW_Forms_Notifications::send_extra( $form, (array) $form_values, $items_map, $entry_data, $post_id );
+		}
+
+		// Settings → Options → "Send the notification email" off: the form only stores the entry and
+		// runs its actions (e.g. a booking action that sends its own alert), so nothing is mailed here.
+		if ( 'no' === ( $form['email_notify'] ?? 'yes' ) ) {
+			FW_Flash_Messages::add( $flash_id, $success, 'success' );
+
+			return self::confirmation( $form, $tag );
 		}
 
 		$result = fw_ext_mailer_send_mail(
@@ -238,11 +313,9 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 			/** Fires after a contact-form email is sent successfully, passing the entry data so listeners can log or react to the submission. */
 			do_action( 'fw:ext:contact-forms:sent', $entry_data );
 
-			FW_Flash_Messages::add(
-				$flash_id,
-				fw_akg( 'success_message', $form, __( 'Message sent!', 'fw' ) ),
-				'success'
-			);
+			FW_Flash_Messages::add( $flash_id, $success, 'success' );
+
+			return self::confirmation( $form, $tag );
 		} elseif ( $this->entry_will_be_stored( $form_id ) ) {
 			// The submission is kept as an entry, so the visitor's message did arrive: telling them
 			// it failed would only make them send it again. The site owner sees the failure on the
@@ -265,11 +338,9 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 			/** Fires when a contact-form notification email fails but the submission is stored as an entry. */
 			do_action( 'fw:ext:contact-forms:mail-failed', $entry_data, $result );
 
-			FW_Flash_Messages::add(
-				$flash_id,
-				fw_akg( 'success_message', $form, __( 'Message sent!', 'fw' ) ),
-				'success'
-			);
+			FW_Flash_Messages::add( $flash_id, $success, 'success' );
+
+			return self::confirmation( $form, $tag );
 		} else {
 			FW_Flash_Messages::add(
 				$flash_id,
@@ -277,6 +348,63 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 				'error'
 			);
 		}
+	}
+
+	/**
+	 * Where to go after a successful submission ("After Sending"). Returns the form save data:
+	 * a `redirect` for a thank-you page or address (followed by the reload and, as JSON, by the
+	 * background sender), nothing for the on-page message.
+	 *
+	 * @param array    $form The form's saved settings.
+	 * @param callable $tag  Answer-tag replacer ( $text, $mode ).
+	 *
+	 * @return array|null
+	 */
+	private static function confirmation( array $form, $tag ) {
+		$type = isset( $form['confirmation_type'] ) ? (string) $form['confirmation_type'] : 'message';
+		$url  = '';
+
+		if ( 'page' === $type && ! empty( $form['confirmation_page'] ) ) {
+			$url = (string) get_permalink( (int) $form['confirmation_page'] );
+		} elseif ( 'url' === $type && ! empty( $form['confirmation_url'] ) ) {
+			$url = trim( (string) call_user_func( $tag, (string) $form['confirmation_url'], 'url' ) );
+			if ( 0 === strpos( $url, '/' ) && 0 !== strpos( $url, '//' ) ) {
+				$url = home_url( $url );
+			}
+			$url = wp_validate_redirect( esc_url_raw( $url ), '' );
+		}
+
+		/**
+		 * Filters where the visitor goes after a successful submission ('' = stay on the page and
+		 * show the message). The quiz uses it to send each score range to its own page.
+		 *
+		 * @param string $url
+		 * @param array  $form The form's settings.
+		 */
+		$url = (string) apply_filters( 'fw_ext_forms_confirmation_url', $url, $form );
+		if ( '' !== $url ) {
+			$url = wp_validate_redirect( esc_url_raw( 0 === strpos( $url, '/' ) && 0 !== strpos( $url, '//' ) ? home_url( $url ) : $url ), '' );
+		}
+
+		return $url !== '' ? array( 'redirect' => $url ) : null;
+	}
+
+	/**
+	 * "a@x.com, b@y.com" → [ 'a@x.com' => '', 'b@y.com' => '' ] (the shape the mailer's cc / bcc take).
+	 *
+	 * @param string $list
+	 *
+	 * @return array
+	 */
+	private static function address_map( $list ) {
+		$out = array();
+		foreach ( array_map( 'trim', explode( ',', (string) $list ) ) as $email ) {
+			if ( is_email( $email ) ) {
+				$out[ $email ] = '';
+			}
+		}
+
+		return $out;
 	}
 
 	/**

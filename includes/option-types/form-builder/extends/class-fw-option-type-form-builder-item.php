@@ -58,6 +58,9 @@ abstract class FW_Option_Type_Form_Builder_Item extends FW_Option_Type_Builder_I
 	 * Returns the value of the input after the form successfully was submitted
 	 * This method ca be used in order to filter of the modify the submit ted value
 	 *
+	 * Called with two more arguments since Forms 2.0.74 (declare them as optional to use them):
+	 * the item itself (its options) and every posted value ({ shortcode => value }).
+	 *
 	 * @param mixed $value
 	 *
 	 * @return mixed

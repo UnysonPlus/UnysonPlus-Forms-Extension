@@ -519,3 +519,242 @@ body.rtl .wrap-forms .field-columns-3 .field-column {
 form.fw_form_fw_form {
 	overflow-x: clip;
 }
+
+/* ---------------------------------------------------------------------------
+ * Sending, results and errors (static/js/submit.js, and the server's error list
+ * after a reload, which the same script turns into this pattern). The error colour
+ * is a custom property so a Form Styles preset can set it once.
+ * ------------------------------------------------------------------------- */
+.fw-form-result {
+	margin: 0 0 1.25rem;
+	padding: .9rem 1.1rem;
+	border-radius: 10px;
+	border: 1px solid transparent;
+	line-height: 1.5;
+}
+.fw-form-result:focus { outline: 2px solid currentColor; outline-offset: 2px; }
+.fw-form-result p { margin: 0; }
+.fw-form-result p + p { margin-top: .4rem; }
+.fw-form-result--success { background: #ecfdf3; border-color: #abefc6; color: #05603a; }
+.fw-form-result--error { background: #fef3f2; border-color: #fecdca; color: #912018; }
+
+.wrap-forms .form-error {
+	display: flex;
+	gap: .4rem;
+	align-items: baseline;
+	margin: .4rem 0 0;
+	font-size: .9em;
+	color: var(--fw-form-error, #b42318);
+}
+.wrap-forms .form-error__icon {
+	flex: 0 0 auto;
+	display: inline-grid;
+	place-items: center;
+	width: 1.1em;
+	height: 1.1em;
+	border-radius: 50%;
+	background: var(--fw-form-error, #b42318);
+	color: #fff;
+	font-size: .8em;
+	font-weight: 700;
+	line-height: 1;
+}
+.wrap-forms [aria-invalid="true"]:not([type="checkbox"]):not([type="radio"]) {
+	border-color: var(--fw-form-error, #b42318) !important;
+}
+.fw-form-error-summary {
+	margin: 0 0 1.25rem;
+	padding: .9rem 1.1rem;
+	border: 2px solid var(--fw-form-error, #b42318);
+	border-radius: 10px;
+	color: var(--fw-form-error, #b42318);
+}
+.fw-form-error-summary:focus { outline: 2px solid var(--fw-form-error, #b42318); outline-offset: 2px; }
+form.fw_form_fw_form .fw-form-error-summary .fw-form-error-summary__title { margin: 0 0 .4rem; font-weight: 700; color: var(--fw-form-error, #b42318); }
+.fw-form-error-summary ul { margin: 0; padding-left: 1.2rem; }
+.fw-form-error-summary a { text-decoration: underline; }
+
+form.fw_form_fw_form.fw-form--sending [type="submit"] { cursor: progress; opacity: .7; }
+
+/* ---------------------------------------------------------------------------
+ * Name, address, section, steps (2.0.71)
+ * ------------------------------------------------------------------------- */
+.wrap-forms fieldset.field-name, .wrap-forms fieldset.field-address { border: 0; padding: 0; margin: 0 0 1rem; min-width: 0; }
+.wrap-forms fieldset.field-name > legend, .wrap-forms fieldset.field-address > legend { padding: 0; margin-bottom: .5rem; font-weight: 700; font-size: 15px; }
+.wrap-forms .field-name__parts { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem 1rem; }
+.wrap-forms .field-address__parts { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem 1rem; }
+.wrap-forms .field-address__part--street, .wrap-forms .field-address__part--line2 { grid-column: 1 / -1; }
+.wrap-forms .field-name__part, .wrap-forms .field-address__part { display: flex; flex-direction: column; gap: .3rem; width: auto; margin: 0; font-weight: 400; }
+.wrap-forms .field-name__part > span, .wrap-forms .field-address__part > span { font-size: .85em; opacity: .8; }
+@media (max-width: 575px) {
+	.wrap-forms .field-name__parts, .wrap-forms .field-address__parts { grid-template-columns: 1fr; }
+}
+.wrap-forms .field-section { margin: 1.25rem 0 .75rem; }
+.wrap-forms .field-section__title { margin: 0 0 .35rem; }
+.wrap-forms .field-section__text { margin: 0; opacity: .8; }
+.wrap-forms .fw-form-step-break__title { margin: 1.5rem 0 .75rem; padding-top: 1rem; border-top: 1px solid rgba(127, 127, 127, .25); }
+
+.fw-form-steps { margin: 0 0 1.25rem; }
+.fw-form-steps__bar { height: 6px; border-radius: 999px; background: rgba(127, 127, 127, .2); overflow: hidden; }
+.fw-form-steps__bar span { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--fw-form-step, currentColor); transition: width .3s ease; }
+.fw-form-steps__label { margin: .5rem 0 0; font-size: .9em; font-weight: 600; }
+.fw-form-steps__label:focus { outline: none; }
+.fw-form-steps__title { font-weight: 400; opacity: .75; }
+.fw-form-steps__title::before { content: "· "; }
+.fw-form-steps__nav { display: flex; gap: .75rem; align-items: center; margin: .5rem 0 1rem; }
+.fw-form-steps__nav [hidden] { display: none !important; }
+.fw-form-steps__back { background: none; border: 0; padding: .5rem 0; text-decoration: underline; cursor: pointer; color: inherit; }
+.fw-form-steps__nav .fw-form-steps__next { margin-left: auto; }
+@media (prefers-reduced-motion: reduce) { .fw-form-steps__bar span { transition: none; } }
+/* A step's rows are hidden with the `hidden` attribute; the grid row's own display must not win. */
+.wrap-forms > [hidden], form.fw_form_fw_form .sc-cf-submit[hidden] { display: none !important; }
+
+/* Range, picture choices, ranking, survey grid (2.0.71) */
+.wrap-forms fieldset.field-image-choice, .wrap-forms fieldset.field-ranking, .wrap-forms fieldset.field-likert { border: 0; padding: 0; margin: 0 0 1rem; min-width: 0; }
+.wrap-forms fieldset.field-image-choice > legend, .wrap-forms fieldset.field-ranking > legend, .wrap-forms fieldset.field-likert > legend { padding: 0; margin-bottom: .5rem; font-weight: 700; font-size: 15px; }
+
+.wrap-forms .field-range__row { display: flex; align-items: center; gap: 1rem; }
+/* The text-field look (base rules and Form Styles presets match every non-choice input) never fits a slider. */
+.wrap-forms .field-range input[type="range"] { flex: 1 1 auto; width: auto; height: 28px !important; min-height: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; -webkit-appearance: auto !important; appearance: auto !important; accent-color: currentColor; }
+.wrap-forms .field-range__value { min-width: 4ch; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.wrap-forms .field-image-choice__grid { display: grid; gap: .75rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.wrap-forms .field-image-choice__grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wrap-forms .field-image-choice__grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 575px) { .wrap-forms .field-image-choice__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.wrap-forms .field-image-choice__item { position: relative; }
+.wrap-forms .field-image-choice__input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.wrap-forms .field-image-choice__card { display: flex; flex-direction: column; gap: .4rem; width: auto; margin: 0; padding: .4rem; border: 2px solid rgba(127, 127, 127, .25); border-radius: 12px; cursor: pointer; font-weight: 600; transition: border-color .15s, box-shadow .15s; }
+.wrap-forms .field-image-choice__card img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; }
+.wrap-forms .field-image-choice__caption { padding: 0 .2rem .2rem; }
+.wrap-forms .field-image-choice__input:checked + .field-image-choice__card { border-color: currentColor; box-shadow: 0 0 0 1px currentColor; }
+.wrap-forms .field-image-choice__input:focus-visible + .field-image-choice__card { outline: 2px solid currentColor; outline-offset: 2px; }
+
+.wrap-forms .field-ranking__list { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; counter-reset: rank; }
+.wrap-forms .field-ranking__item { display: flex; align-items: center; gap: .75rem; padding: .5rem .75rem; border: 1px solid rgba(127, 127, 127, .3); border-radius: 10px; counter-increment: rank; }
+.wrap-forms .field-ranking__text { flex: 1 1 auto; width: auto; margin: 0; font-weight: 400; }
+.wrap-forms .field-ranking select.field-ranking__pos { width: auto; height: auto; min-height: 36px; padding: 0 .6rem; }
+.wrap-forms .field-ranking--js .field-ranking__pos { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+.wrap-forms .field-ranking--js .field-ranking__item::before { content: counter(rank); min-width: 1.6em; height: 1.6em; display: inline-grid; place-items: center; border-radius: 50%; background: rgba(127, 127, 127, .15); font-weight: 700; font-size: .85em; }
+.wrap-forms .field-ranking__moves { display: inline-flex; gap: .25rem; }
+.wrap-forms .field-ranking__moves button { width: 36px; height: 36px; border: 1px solid rgba(127, 127, 127, .35); border-radius: 8px; background: transparent; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; }
+.wrap-forms .field-ranking__moves button[disabled] { opacity: .35; cursor: default; }
+
+.wrap-forms .field-likert__table { width: 100%; border-collapse: collapse; }
+.wrap-forms .field-likert__table th, .wrap-forms .field-likert__table td { padding: .55rem .4rem; border-bottom: 1px solid rgba(127, 127, 127, .2); text-align: center; vertical-align: middle; }
+.wrap-forms .field-likert__table thead th { font-size: .82em; font-weight: 600; opacity: .8; }
+.wrap-forms .field-likert__table tbody th { text-align: left; font-weight: 400; }
+.wrap-forms .field-likert__table input[type="radio"] { width: 1.15rem; height: 1.15rem; margin: 0; }
+.wrap-forms .field-likert__label { display: inline; width: auto; margin: 0; }
+.wrap-forms .field-likert__point { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 575px) {
+	.wrap-forms .field-likert__table thead { display: none; }
+	.wrap-forms .field-likert__table tr { display: block; padding: .5rem 0; border-bottom: 1px solid rgba(127, 127, 127, .2); }
+	.wrap-forms .field-likert__table tbody th { display: block; border: 0; padding: 0 0 .35rem; font-weight: 600; }
+	.wrap-forms .field-likert__table td { display: flex; align-items: center; gap: .5rem; border: 0; padding: .2rem 0; text-align: left; }
+	.wrap-forms .field-likert__point { position: static; width: auto; height: auto; clip-path: none; }
+}
+
+/* Repeating group, one-question-at-a-time (2.0.72) */
+.wrap-forms fieldset.field-repeater { border: 0; padding: 0; margin: 0 0 1rem; min-width: 0; }
+.wrap-forms fieldset.field-repeater > legend { padding: 0; margin-bottom: .5rem; font-weight: 700; font-size: 15px; }
+.wrap-forms .field-repeater__rows { display: grid; gap: .75rem; }
+.wrap-forms .field-repeater__row { padding: .85rem 1rem 1rem; border: 1px solid rgba(127, 127, 127, .28); border-radius: 12px; }
+.wrap-forms .field-repeater__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .6rem; }
+.wrap-forms .field-repeater__title { font-weight: 700; }
+.wrap-forms .field-repeater__remove, .wrap-forms .field-repeater__add { background: none; border: 0; padding: .35rem 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+.wrap-forms .field-repeater__add { margin-top: .6rem; font-weight: 600; }
+.wrap-forms .field-repeater__remove[hidden], .wrap-forms .field-repeater__add[hidden] { display: none; }
+.wrap-forms .field-repeater__fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem 1rem; }
+.wrap-forms .field-repeater__field { display: flex; flex-direction: column; gap: .3rem; width: auto; margin: 0; font-weight: 400; }
+.wrap-forms .field-repeater__field > span { font-size: .85em; opacity: .85; }
+/* A required star must not make one sub-label taller than its neighbour (boxes would no longer line up). */
+.wrap-forms :is(.field-repeater__field, .field-name__part, .field-address__part) > span sup { line-height: 0; }
+
+form.fw_form_fw_form[data-fw-conversational] .fw-form-question { min-height: 9rem; align-content: flex-start; }
+form.fw_form_fw_form[data-fw-conversational] .fw-form-question :is(.field-text, .field-textarea, .field-select, .field-range) > label,
+form.fw_form_fw_form[data-fw-conversational] .fw-form-question fieldset > legend { font-size: 1.25rem; line-height: 1.3; margin-bottom: .75rem; }
+
+/* ---------- Product, Amount and Calculated fields (2.0.74) ---------- */
+.wrap-forms fieldset.field-product, .wrap-forms fieldset.field-amount { border: 0; padding: 0; margin: 0 0 1rem; min-width: 0; }
+.wrap-forms fieldset.field-product > legend, .wrap-forms fieldset.field-amount > legend { padding: 0; margin-bottom: .5rem; font-weight: 700; font-size: 15px; }
+.wrap-forms .field-product__price { margin: 0 0 .5rem; font-size: 1.125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wrap-forms .field-product__choices { display: grid; gap: .5rem; margin-bottom: .6rem; }
+.wrap-forms .field-product__choice { display: flex; align-items: center; gap: .6rem; width: auto; margin: 0; padding: .7rem .9rem; border: 1px solid rgba(127, 127, 127, .3); border-radius: 10px; cursor: pointer; font-weight: 500; }
+.wrap-forms .field-product__choice:has(input:checked) { border-color: currentColor; box-shadow: 0 0 0 1px currentColor; }
+.wrap-forms .field-product input[type="radio"], .wrap-forms .field-product input[type="checkbox"] { flex: none; width: 18px !important; height: 18px !important; min-height: 0 !important; margin: 0; padding: 0; }
+.wrap-forms .field-product__name { flex: 1 1 auto; }
+.wrap-forms .field-product__each { font-weight: 700; font-variant-numeric: tabular-nums; }
+.wrap-forms .field-product__qty { display: inline-flex; align-items: center; gap: .6rem; width: auto; margin: 0; font-weight: 500; }
+.wrap-forms .field-product__qty input[type="number"] { width: 6rem !important; }
+.wrap-forms .field-product__add { display: inline-flex; align-items: center; gap: .5rem; width: auto; margin: 0; font-weight: 500; }
+.wrap-forms .field-product__line { min-height: 1.4em; margin: .4rem 0 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wrap-forms .field-amount__choices { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .6rem; }
+.wrap-forms .field-amount__choice { position: relative; width: auto; margin: 0; }
+.wrap-forms .field-amount__choice input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.wrap-forms .field-amount__choice span { display: inline-block; min-width: 4.5rem; padding: .6rem 1rem; border: 1px solid rgba(127, 127, 127, .35); border-radius: 999px; text-align: center; font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; }
+.wrap-forms .field-amount__choice input:checked + span { background: var(--fw-form-step, #1d2327); border-color: var(--fw-form-step, #1d2327); color: #fff; }
+.wrap-forms .field-amount__choice input:focus-visible + span { outline: 2px solid currentColor; outline-offset: 2px; }
+.wrap-forms .field-amount__other { position: relative; display: block; max-width: 14rem; margin: 0; }
+.wrap-forms .field-amount__other[hidden] { display: none !important; }
+.wrap-forms .field-amount__symbol { position: absolute; left: .9rem; top: 50%; transform: translateY(-50%); font-weight: 700; pointer-events: none; }
+.wrap-forms .field-amount__other input { padding-left: 2.2rem !important; }
+.wrap-forms .field-calculation { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem 1rem; margin: 0 0 1rem; padding: .7rem 0; border-top: 1px solid rgba(127, 127, 127, .25); border-bottom: 1px solid rgba(127, 127, 127, .25); }
+/* Calculated rows one after another read as one table: no double rule between them. */
+.wrap-forms .fw-row:has(> div > .field-calculation) + .fw-row:has(> div > .field-calculation) .field-calculation { margin-top: -1rem; border-top: 0; }
+.wrap-forms .field-calculation__label { font-weight: 700; }
+.wrap-forms .field-calculation__value { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wrap-forms .field-calculation .field-info { flex-basis: 100%; margin: 0; }
+.wrap-forms [data-fw-calc-hidden][hidden] { display: none !important; }
+
+.wrap-forms fieldset.field-payment-method { border: 0; padding: 0; margin: 0 0 1rem; min-width: 0; }
+.wrap-forms fieldset.field-payment-method > legend { padding: 0; margin-bottom: .5rem; font-weight: 700; font-size: 15px; }
+.wrap-forms .field-payment-method__choices { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
+.wrap-forms .field-payment-method__choice { display: flex; align-items: center; gap: .6rem; width: auto; margin: 0; padding: .8rem .9rem; border: 1px solid rgba(127, 127, 127, .3); border-radius: 10px; cursor: pointer; font-weight: 600; }
+.wrap-forms .field-payment-method__choice:has(input:checked) { border-color: currentColor; box-shadow: 0 0 0 1px currentColor; }
+.wrap-forms .field-payment-method input[type="radio"] { flex: none; width: 18px !important; height: 18px !important; min-height: 0 !important; margin: 0; padding: 0; }
+.fw-form-payment-notice { margin: 0 0 1.5rem; padding: 1rem 1.2rem; border-radius: 10px; border: 1px solid rgba(127, 127, 127, .3); }
+.fw-form-payment-notice.fw-form-result--success { border-color: #1a7f37; background: #effaf2; color: #0f5323; }
+.fw-form-payment-notice.fw-form-result--error { border-color: #b42318; background: #fef3f2; color: #7a271a; }
+.fw-form-payment-notice p { margin: 0; }
+
+/* ---------- Coupon field (2.0.76) ---------- */
+.wrap-forms .field-coupon > label { display: block; margin-bottom: .4rem; font-weight: 700; font-size: 15px; }
+.wrap-forms .field-coupon__row { display: flex; gap: .5rem; align-items: stretch; max-width: 26rem; }
+.wrap-forms .field-coupon__row input { flex: 1 1 auto; min-width: 0; text-transform: uppercase; }
+.wrap-forms .field-coupon__apply { flex: none; padding: 0 1.1rem; border: 1px solid currentColor; border-radius: 8px; background: transparent; color: inherit; font-weight: 700; cursor: pointer; }
+.wrap-forms .field-coupon__apply:disabled { opacity: .6; cursor: progress; }
+.wrap-forms .field-coupon__status { min-height: 1.3em; margin: .4rem 0 0; font-weight: 600; }
+.wrap-forms .field-coupon.is-ok .field-coupon__status { color: #1a7f37; }
+.wrap-forms .field-coupon.is-bad .field-coupon__status { color: var(--fw-form-error, #b42318); }
+
+/* ---------- Limits (2.0.77) ---------- */
+.fw-form-closed { padding: 1rem 1.2rem; border: 1px solid rgba(127, 127, 127, .3); border-radius: 10px; }
+.fw-form-closed p { margin: 0; }
+.wrap-forms .fw-form-seats { opacity: .75; font-weight: 400; }
+.wrap-forms .fw-form-seats.is-full { color: var(--fw-form-error, #b42318); opacity: 1; }
+
+/* ---------- Signature (2.0.77) ---------- */
+.wrap-forms fieldset.field-signature { border: 0; padding: 0; margin: 0 0 1rem; min-width: 0; }
+.wrap-forms fieldset.field-signature > legend { padding: 0; margin-bottom: .5rem; font-weight: 700; font-size: 15px; }
+.wrap-forms .field-signature__pad { position: relative; max-width: 600px; }
+.wrap-forms .field-signature__pad[hidden] { display: none !important; }
+.wrap-forms .field-signature__pad canvas { display: block; width: 100%; height: 180px; border: 1px dashed rgba(127, 127, 127, .55); border-radius: 10px; background: rgba(127, 127, 127, .04); touch-action: none; cursor: crosshair; }
+.wrap-forms .field-signature__clear { position: absolute; top: .4rem; right: .4rem; padding: .25rem .7rem; border: 1px solid rgba(127, 127, 127, .4); border-radius: 6px; background: #fff; color: #1d2327; font-size: .85rem; cursor: pointer; }
+.wrap-forms .field-signature__typed { display: block; max-width: 600px; margin: .6rem 0 0; font-weight: 400; }
+.wrap-forms .field-signature__typed span { display: block; margin-bottom: .3rem; font-size: .9rem; }
+
+/* ---------- Save and continue later (2.0.79) ---------- */
+.fw-form-drafts { margin-top: .9rem; }
+.fw-form-drafts__open { padding: 0; border: 0; background: none; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+.fw-form-drafts__panel { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-end; margin-top: .6rem; max-width: 34rem; }
+.fw-form-drafts__panel[hidden] { display: none !important; }
+.fw-form-drafts__panel label { flex: 1 1 16rem; margin: 0; }
+.fw-form-drafts__panel label span { display: block; margin-bottom: .3rem; font-size: .9rem; }
+.fw-form-drafts__send { padding: .6rem 1rem; border: 1px solid currentColor; border-radius: 8px; background: transparent; color: inherit; font-weight: 700; cursor: pointer; }
+.fw-form-drafts__status { min-height: 1.2em; margin: .5rem 0 0; }
+.fw-form-drafts.is-ok .fw-form-drafts__status { color: #1a7f37; }
+
+/* ---------- Unfinished entries notice (2.0.80) ---------- */
+.fw-form-partial-notice { margin: .8rem 0 0; font-size: .85rem; opacity: .8; }
+.fw-form-editing-notice { margin: 0 0 1rem; padding: .7rem 1rem; border: 1px solid rgba(127,127,127,.35); border-radius: 10px; font-weight: 600; }

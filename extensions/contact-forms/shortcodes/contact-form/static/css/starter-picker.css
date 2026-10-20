@@ -1,0 +1,71 @@
+/* The form-type picker (static/js/starter-picker.js), shown above an empty form builder. */
+.fw-option-type-form-builder.fw-forms-picker-open .builder-root-items { display: none; }
+
+.fw-forms-picker {
+	position: relative;
+	margin: 12px 0 16px;
+	padding: 20px 22px 22px;
+	border: 1px solid #dcdcde;
+	border-radius: 10px;
+	background: #fff;
+}
+.fw-forms-picker__head { position: relative; padding-right: 32px; margin-bottom: 14px; }
+.fw-forms-picker__title { margin: 0 0 4px; font-size: 16px; line-height: 1.3; }
+.fw-forms-picker__intro { margin: 0; color: #50575e; }
+.fw-forms-picker__close { position: absolute; top: -4px; right: -6px; color: #50575e; text-decoration: none; }
+.fw-forms-picker__close:hover, .fw-forms-picker__close:focus { color: #1d2327; }
+
+.fw-forms-picker__describe { margin: 0 0 18px; padding: 12px 14px; border-radius: 8px; background: #f6f7f7; }
+.fw-forms-picker__label { display: block; margin: 0 0 6px; font-weight: 600; }
+.fw-forms-picker__describe-row { display: flex; gap: 8px; align-items: stretch; }
+.fw-forms-picker__describe-row textarea { flex: 1 1 auto; min-height: 44px; resize: vertical; }
+.fw-forms-picker__describe-row .button { align-self: flex-start; }
+.fw-forms-picker__status:empty { display: none; }
+.fw-forms-picker__status, .fw-forms-picker__note { margin: 6px 0 0; color: #50575e; }
+
+.fw-forms-picker__group {
+	margin: 18px 0 8px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	color: #50575e;
+}
+.fw-forms-picker__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+	gap: 10px;
+}
+.fw-forms-picker__card {
+	display: grid;
+	grid-template-columns: 28px 1fr;
+	grid-template-rows: auto auto 1fr;
+	column-gap: 10px;
+	row-gap: 2px;
+	align-items: start;
+	padding: 12px;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	background: #fff;
+	color: #1d2327;
+	text-align: left;
+	cursor: pointer;
+	transition: border-color .12s ease, box-shadow .12s ease;
+}
+.fw-forms-picker__card:hover { border-color: #2271b1; }
+.fw-forms-picker__card:focus-visible { outline: 2px solid #2271b1; outline-offset: 2px; }
+.fw-forms-picker__card .dashicons { grid-row: 1 / span 3; width: 28px; height: 28px; font-size: 24px; color: #2271b1; }
+.fw-forms-picker__card-title { font-weight: 600; line-height: 1.3; }
+.fw-forms-picker__card-desc { font-size: 12px; line-height: 1.4; color: #50575e; }
+.fw-forms-picker__card-meta { font-size: 11px; color: #787c82; margin-top: 2px; }
+.fw-forms-picker__card--blank { border-style: dashed; }
+.fw-forms-picker__card--blank .dashicons { color: #50575e; }
+
+.fw-forms-picker-reopen { margin-right: 14px; line-height: 28px; }
+
+/* A saved form replaces the builder's fields (see linkedNotice in starter-picker.js). */
+.fw-option-type-form-builder.fw-forms-is-linked .builder-root-items { display: none; }
+.fw-forms-linked { margin: 12px 0 16px; }
+.fw-forms-linked .button-link { margin-left: 8px; }
+.fw-forms-picker__card--saved .dashicons { color: #00a32a; }
+.fw-forms-library-save { margin-right: 14px; line-height: 28px; }

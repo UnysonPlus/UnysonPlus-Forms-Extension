@@ -187,7 +187,7 @@ class FW_Option_Type_Form_Builder_Item_Text extends FW_Option_Type_Form_Builder_
 							'info' => array(
 								'type'  => 'textarea',
 								'label' => __( 'Help Text', 'fw' ),
-								'desc'  => __( 'Help text shown under the field, e.g. âA sentence or two is plenty.â It is linked to the field for screen readers.',
+								'desc'  => __( 'Help text shown under the field, e.g. “A sentence or two is plenty.” It is linked to the field for screen readers.',
 									'fw' ),
 							)
 						),

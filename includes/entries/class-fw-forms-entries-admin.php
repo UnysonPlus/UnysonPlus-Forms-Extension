@@ -134,6 +134,8 @@ class FW_Forms_Entries_Admin {
 			'new'      => __( 'New', 'fw' ),
 			'read'     => __( 'Read', 'fw' ),
 			'archived' => __( 'Archived', 'fw' ),
+			'spam'     => __( 'Spam', 'fw' ),
+			'partial'  => __( 'Unfinished', 'fw' ),
 		);
 	}
 
@@ -252,10 +254,30 @@ class FW_Forms_Entries_Admin {
 				$this->notice( 'success', sprintf( _n( '%d entry updated.', '%d entries updated.', $n, 'fw' ), $n ) );
 				break;
 
+			case 'spam':
+			case 'not_spam':
+				$n = FW_Forms_Entries::set_status( $ids, 'spam' === $action ? 'spam' : 'new' );
+				$this->notice( 'success', sprintf( _n( '%d entry updated.', '%d entries updated.', $n, 'fw' ), $n ) );
+				break;
+
 			case 'delete':
 				$n = FW_Forms_Entries::delete( $ids );
 				$this->notice( 'success', sprintf( _n( '%d entry deleted.', '%d entries deleted.', $n, 'fw' ), $n ) );
 				break;
+
+			default:
+				/**
+				 * Handle an entry action added elsewhere (e.g. "Mark paid"). Return a notice
+				 * message to show, or '' if the action is not yours.
+				 *
+				 * @param string $message
+				 * @param string $action
+				 * @param int[]  $ids
+				 */
+				$message = (string) apply_filters( 'fw_ext_forms_entry_action', '', $action, $ids );
+				if ( '' !== $message ) {
+					$this->notice( 'success', $message );
+				}
 		}
 	}
 
@@ -295,6 +317,24 @@ class FW_Forms_Entries_Admin {
 			return;
 		}
 
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="form-entries-' . gmdate( 'Y-m-d' ) . '.csv"' );
+
+		$out = fopen( 'php://output', 'w' );
+		self::write_csv( $filters, $out );
+		fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		exit;
+	}
+
+	/**
+	 * Write the entries matching the filters as CSV (UTF-8 with a BOM, one column per answer label).
+	 *
+	 * @param array    $filters FW_Forms_Entries::query() filters.
+	 * @param resource $out
+	 * @return int Rows written.
+	 */
+	public static function write_csv( array $filters, $out ) {
 		// Pass 1: discover the column set.
 		$labels = array();
 		FW_Forms_Entries::each( $filters, function ( $row ) use ( &$labels ) {
@@ -303,17 +343,14 @@ class FW_Forms_Entries_Admin {
 			}
 		} );
 		$labels = array_keys( $labels );
+		$n      = 0;
 
-		nocache_headers();
-		header( 'Content-Type: text/csv; charset=utf-8' );
-		header( 'Content-Disposition: attachment; filename="form-entries-' . gmdate( 'Y-m-d' ) . '.csv"' );
-
-		$out = fopen( 'php://output', 'w' );
 		fwrite( $out, "\xEF\xBB\xBF" ); // BOM so Excel reads UTF-8.
 		fputcsv( $out, array_merge( array( 'ID', 'Form', 'Email', 'Status', 'Submitted' ), $labels ) );
 
 		// Pass 2: stream rows.
-		FW_Forms_Entries::each( $filters, function ( $row ) use ( $out, $labels ) {
+		FW_Forms_Entries::each( $filters, function ( $row ) use ( $out, $labels, &$n ) {
+			$n++;
 			$by_label = array();
 
 			foreach ( $row->fields as $f ) {
@@ -329,8 +366,7 @@ class FW_Forms_Entries_Admin {
 			fputcsv( $out, $line );
 		} );
 
-		fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-		exit;
+		return $n;
 	}
 
 	/**
@@ -392,6 +428,9 @@ class FW_Forms_Entries_Admin {
 		?>
 		<h1 class="wp-heading-inline"><?php esc_html_e( 'Form Entries', 'fw' ); ?></h1>
 		<a href="<?php echo esc_url( $export_url ); ?>" class="page-title-action"><?php esc_html_e( 'Export these results (CSV)', 'fw' ); ?></a>
+		<?php if ( class_exists( 'FW_Forms_Reports' ) ) : ?>
+			<a href="<?php echo esc_url( FW_Forms_Reports::url( $filters['form_id'] ) ); ?>" class="page-title-action"><?php esc_html_e( 'See results', 'fw' ); ?></a>
+		<?php endif; ?>
 		<hr class="wp-header-end">
 		<?php $this->render_notice(); ?>
 
@@ -476,6 +515,15 @@ class FW_Forms_Entries_Admin {
 					<?php endif; ?>
 				</tbody>
 			</table>
+
+			<?php
+			/**
+			 * Add panels to a single entry (its payment, for instance).
+			 *
+			 * @param object $entry
+			 */
+			do_action( 'fw_ext_forms_entry_panels', $entry );
+			?>
 
 			<p class="fw-entries__actions">
 				<?php if ( 'archived' !== $entry->status ) : ?>

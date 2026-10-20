@@ -115,7 +115,7 @@ if ( ! function_exists( 'fw_ext_forms_ai_register' ) ) :
 
 		fw_ai_register_ability( 'forms-add', array(
 			'label'       => __( 'Add a contact form to a page', 'fw' ),
-			'description' => 'Adds a contact form to a page: start from a starter (see forms_describe) and / or give fields [{ type, label, required?, width?, choices?, …type options }]; title adds a heading field at the top. email_to receives submissions (default: the site admin email), subject / submit_text / success_message set the texts. Placed at the page root in its own section unless parent_path names a layout item. Works in the builder panel (unsaved until Update) and on saved pages (a revision first; undo restores). The form starts working once its page has been viewed.',
+			'description' => 'Adds a contact form to a page: start from a starter (see forms_describe) and / or give fields [{ type, label, required?, width?, choices?, …type options }]; title adds a heading field at the top. email_to receives submissions (default: the site admin email), subject / submit_text / success_message / failure_message set the texts (subject may use Dynamic Content tokens such as {{post_title}}). store (default true) keeps every submission under Form Entries. subscribe { list (a CRM list slug), tags? (tag names or slugs), name_field? (the label of the field holding the name) } adds people who tick a newsletter consent field to the CRM; give the form a consent field (type consent, purpose newsletter) for it. Placed at the page root in its own section unless parent_path names a layout item. Works in the builder panel (unsaved until Update) and on saved pages (a revision first; undo restores). The form starts working once its page has been viewed.',
 			'input'       => array(
 				'post_id'         => array( 'type' => 'integer' ),
 				'starter'         => array( 'type' => 'string' ),
@@ -125,6 +125,9 @@ if ( ! function_exists( 'fw_ext_forms_ai_register' ) ) :
 				'subject'         => array( 'type' => 'string' ),
 				'submit_text'     => array( 'type' => 'string' ),
 				'success_message' => array( 'type' => 'string' ),
+				'failure_message' => array( 'type' => 'string' ),
+				'store'           => array( 'type' => 'boolean', 'default' => true ),
+				'subscribe'       => array( 'type' => 'object' ),
 				'parent_path'     => array( 'type' => 'string' ),
 				'position'        => array( 'type' => 'integer', 'minimum' => 0 ),
 			),
@@ -177,6 +180,14 @@ if ( ! function_exists( 'fw_ext_forms_ai_register' ) ) :
 		if ( ! empty( $in['email_to'] ) && ! is_email( (string) $in['email_to'] ) ) {
 			$errors[] = 'email_to is not a valid email address.';
 		}
+		$subscribe = isset( $in['subscribe'] ) && is_array( $in['subscribe'] ) ? $in['subscribe'] : null;
+		if ( $subscribe ) {
+			if ( ! class_exists( 'FW_CRM_Lists' ) || ! fw_ext( 'crm' ) ) {
+				$errors[] = 'subscribe needs the CRM extension active.';
+			} elseif ( empty( $subscribe['list'] ) || ! FW_CRM_Lists::find_by_slug( sanitize_key( (string) $subscribe['list'] ), 'list' ) ) {
+				$errors[] = 'subscribe.list must be the slug of an existing CRM list (create it with crm_save_lists).';
+			}
+		}
 		if ( $errors ) {
 			return new WP_Error( 'fw_forms_ai_invalid', 'Nothing was changed: ' . implode( ' | ', array_slice( $errors, 0, 20 ) ) );
 		}
@@ -186,7 +197,7 @@ if ( ! function_exists( 'fw_ext_forms_ai_register' ) ) :
 		$atts = fw_get_options_values_from_input( (array) $sc->get_options(), array() );
 		$atts['id']   = substr( md5( uniqid( 'cf', true ) ), 0, 20 );
 		$atts['form'] = array( 'json' => wp_json_encode( $items ) );
-		$map          = array( 'email_to' => 'email_to', 'subject' => 'subject_message', 'submit_text' => 'submit_button_text', 'success_message' => 'success_message' );
+		$map          = array( 'email_to' => 'email_to', 'subject' => 'subject_message', 'submit_text' => 'submit_button_text', 'success_message' => 'success_message', 'failure_message' => 'failure_message' );
 		foreach ( $map as $k => $opt ) {
 			if ( isset( $in[ $k ] ) && $in[ $k ] !== '' ) {
 				$atts[ $opt ] = $k === 'email_to' ? sanitize_email( (string) $in[ $k ] ) : sanitize_text_field( (string) $in[ $k ] );
@@ -194,6 +205,15 @@ if ( ! function_exists( 'fw_ext_forms_ai_register' ) ) :
 		}
 		if ( empty( $atts['email_to'] ) ) {
 			$atts['email_to'] = get_option( 'admin_email' );
+		}
+		// Actions (the element's Actions tab): store the entry, and subscribe consenting people.
+		$atts['action_store'] = isset( $in['store'] ) && ! $in['store'] ? 'no' : 'yes';
+		if ( $subscribe ) {
+			$tags = array_filter( array_map( 'trim', is_array( $subscribe['tags'] ?? null ) ? $subscribe['tags'] : explode( ',', (string) ( $subscribe['tags'] ?? '' ) ) ) );
+			$atts['action_subscribe']      = 'yes';
+			$atts['action_subscribe_list'] = sanitize_key( (string) $subscribe['list'] );
+			$atts['action_subscribe_tags'] = implode( ', ', array_map( 'sanitize_text_field', $tags ) );
+			$atts['action_subscribe_name'] = sanitize_text_field( (string) ( $subscribe['name_field'] ?? '' ) );
 		}
 		$form = array( 'type' => 'contact-form', 'atts' => $atts, '_items' => array() );
 

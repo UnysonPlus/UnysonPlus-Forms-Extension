@@ -12,7 +12,9 @@
 class FW_Forms_Entries {
 
 	/** The states an entry can be in. A whitelist, so an unknown value never reaches SQL. */
-	const STATUSES = array( 'new', 'read', 'archived' );
+	// 'partial' = an unfinished entry (kept only on forms that switch it on); like spam, it stays out of
+	// 'All' and out of every count that limits, results and the CRM rely on.
+	const STATUSES = array( 'new', 'read', 'archived', 'spam', 'partial' );
 
 	/**
 	 * @return string
@@ -40,10 +42,16 @@ class FW_Forms_Entries {
 			'post_id'    => (int) ( $data['post_id'] ?? 0 ),
 			'email'      => substr( sanitize_email( (string) ( $data['email'] ?? '' ) ), 0, 190 ),
 			'fields'     => wp_json_encode( is_array( $data['fields'] ?? null ) ? $data['fields'] : array() ),
-			'status'     => 'new',
+			'status'     => in_array( (string) ( $data['status'] ?? '' ), self::STATUSES, true ) ? (string) $data['status'] : 'new',
 			'ip'         => substr( sanitize_text_field( (string) ( $data['ip'] ?? '' ) ), 0, 45 ),
 			'user_agent' => substr( sanitize_text_field( (string) ( $data['user_agent'] ?? '' ) ), 0, 255 ),
 			'created_at' => current_time( 'mysql' ),
+			// Who sent it (0 = a visitor), whether it waits for approval before showing on the site
+			// ('' = no approval needed | pending | approved | rejected), and the answers in the shape
+			// the form posts them, so the sender can edit them later.
+			'user_id'    => (int) ( $data['user_id'] ?? 0 ),
+			'approval'   => in_array( (string) ( $data['approval'] ?? '' ), array( '', 'pending', 'approved', 'rejected' ), true ) ? (string) ( $data['approval'] ?? '' ) : '',
+			'raw_values' => isset( $data['raw_values'] ) && is_array( $data['raw_values'] ) ? wp_json_encode( $data['raw_values'] ) : null,
 		);
 
 		$ok = $wpdb->insert( self::table(), $row );
@@ -57,6 +65,33 @@ class FW_Forms_Entries {
 	 *
 	 * @return int Rows changed.
 	 */
+	/**
+	 * Replace an entry's answers (an unfinished entry being filled in further).
+	 *
+	 * @param int    $id
+	 * @param array  $fields
+	 * @param string $email
+	 * @return bool
+	 */
+	public static function update_fields( $id, array $fields, $email = '', $raw = null ) {
+		global $wpdb;
+		$row = array(
+			'fields' => wp_json_encode( $fields ),
+			'email'  => substr( sanitize_email( (string) $email ), 0, 190 ),
+		);
+		if ( is_array( $raw ) ) {
+			$row['raw_values'] = wp_json_encode( $raw );
+		}
+		return false !== $wpdb->update( self::table(), $row, array( 'id' => (int) $id ) );
+	}
+
+	/** Set the approval state of one entry. */
+	public static function set_approval( $id, $approval ) {
+		global $wpdb;
+		return in_array( $approval, array( '', 'pending', 'approved', 'rejected' ), true )
+			&& false !== $wpdb->update( self::table(), array( 'approval' => $approval ), array( 'id' => (int) $id ) );
+	}
+
 	public static function set_status( $ids, $status ) {
 		global $wpdb;
 
@@ -106,7 +141,16 @@ class FW_Forms_Entries {
 		$in = implode( ',', $ids );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- ids are cast to int above.
-		return (int) $wpdb->query( 'DELETE FROM ' . self::table() . " WHERE id IN ({$in})" );
+		$n = (int) $wpdb->query( 'DELETE FROM ' . self::table() . " WHERE id IN ({$in})" );
+
+		/**
+		 * Fires after entries are deleted (their notes, payments' links… can follow).
+		 *
+		 * @param int[] $ids
+		 */
+		do_action( 'fw_ext_forms_entries_deleted', $ids );
+
+		return $n;
 	}
 
 	/**
@@ -189,7 +233,7 @@ class FW_Forms_Entries {
 	 *
 	 * @return int Rows deleted.
 	 */
-	public static function delete_older_than( $days ) {
+	public static function delete_older_than( $days, $form_id = null ) {
 		global $wpdb;
 
 		$days = (int) $days;
@@ -201,6 +245,10 @@ class FW_Forms_Entries {
 		$cutoff = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - ( $days * DAY_IN_SECONDS ) );
 
 		// Through delete() so the entries' uploaded files are removed too.
+		if ( null !== $form_id ) {
+			return self::delete( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM ' . self::table() . ' WHERE created_at < %s AND form_id = %s', $cutoff, (string) $form_id ) ) );
+		}
+
 		return self::delete( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM ' . self::table() . ' WHERE created_at < %s', $cutoff ) ) );
 	}
 
@@ -236,6 +284,11 @@ class FW_Forms_Entries {
 			'status'    => '',
 			'search'    => '',
 			'email'     => '',
+			'starred'   => '',
+			'since'     => '',
+			'approval'  => '',
+			'user_id'   => 0,
+			'assigned'  => 0,
 			'date_from' => '',
 			'date_to'   => '',
 			'orderby'   => 'created_at',
@@ -308,7 +361,9 @@ class FW_Forms_Entries {
 
 		foreach ( (array) $rows as $r ) {
 			$out[ $r->status ] = (int) $r->n;
-			$all              += (int) $r->n;
+			if ( ! in_array( $r->status, array( 'spam', 'partial' ), true ) ) {
+				$all += (int) $r->n;
+			}
 		}
 
 		$out['all'] = $all;
@@ -381,11 +436,38 @@ class FW_Forms_Entries {
 		if ( '' !== $args['status'] && in_array( $args['status'], self::STATUSES, true ) ) {
 			$w[] = 'status = %s';
 			$p[] = $args['status'];
+		} elseif ( '' === $args['status'] ) {
+			// "All" means all real submissions: spam stays in its own view, like comments.
+			$w[] = "status NOT IN ('spam','partial')";
 		}
 
 		if ( '' !== $args['email'] ) {
 			$w[] = 'email = %s';
 			$p[] = sanitize_email( $args['email'] );
+		}
+
+		if ( '' !== $args['since'] ) {
+			$w[] = 'created_at >= %s';
+			$p[] = (string) $args['since'];
+		}
+
+		if ( '' !== $args['approval'] ) {
+			$w[] = 'approval = %s';
+			$p[] = (string) $args['approval'];
+		}
+
+		if ( ! empty( $args['user_id'] ) ) {
+			$w[] = 'user_id = %d';
+			$p[] = (int) $args['user_id'];
+		}
+
+		if ( ! empty( $args['starred'] ) ) {
+			$w[] = 'starred = 1';
+		}
+
+		if ( ! empty( $args['assigned'] ) ) {
+			$w[] = 'assigned_to = %d';
+			$p[] = (int) $args['assigned'];
 		}
 
 		if ( '' !== $args['search'] ) {

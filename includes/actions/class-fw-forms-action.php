@@ -53,6 +53,23 @@ abstract class FW_Forms_Action {
 	abstract public function get_options();
 
 	/**
+	 * Refuse a submission before it is accepted (optional). Called only when the
+	 * action is enabled and every field is valid, with the same context `run()` gets
+	 * (minus `entry_id`). Return a message to show the visitor instead of the
+	 * success message — and nothing is sent, stored or run. Return null to accept.
+	 *
+	 * Keep it to checks the visitor can act on ("that email already has an account");
+	 * everything else belongs in `run()`, whose failures the visitor never sees.
+	 *
+	 * @param array $ctx
+	 *
+	 * @return string|null
+	 */
+	public function validate( array $ctx ) {
+		return null;
+	}
+
+	/**
 	 * @param array $form The form's saved settings.
 	 *
 	 * @return bool
@@ -82,6 +99,18 @@ abstract class FW_Forms_Action {
 	 */
 	public static function opt( array $form, $key, $default = '' ) {
 		return isset( $form[ $key ] ) && '' !== $form[ $key ] && null !== $form[ $key ] ? $form[ $key ] : $default;
+	}
+
+	/**
+	 * The lines of a textarea option. The page builder stores a textarea's line breaks as `<br />`
+	 * in the element's attributes, so both are line breaks here.
+	 *
+	 * @param string $text
+	 * @return string[] Trimmed, empty lines dropped.
+	 */
+	public static function lines( $text ) {
+		$text = preg_replace( '#<br\s*/?>#i', "\n", (string) $text );
+		return array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', $text ) ), 'strlen' ) );
 	}
 
 	/**

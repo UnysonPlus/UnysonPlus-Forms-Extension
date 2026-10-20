@@ -24,6 +24,7 @@ class FW_Forms_Actions {
 
 	public function __construct() {
 		add_action( 'fw_ext_forms_frontend_submit', array( $this, '_action_submit' ), 20 );
+		add_filter( 'fw_ext_forms_validate_submission', array( $this, '_filter_validate' ), 10, 2 );
 		add_action( 'fw_ext_forms_entry_stored', array( __CLASS__, '_remember_entry' ), 10, 1 );
 	}
 
@@ -40,8 +41,12 @@ class FW_Forms_Actions {
 		}
 
 		require_once dirname( __FILE__ ) . '/class-fw-forms-action-store.php';
+		require_once dirname( __FILE__ ) . '/class-fw-forms-action-autoresponder.php';
+		require_once dirname( __FILE__ ) . '/class-fw-forms-action-webhook.php';
+		require_once dirname( __FILE__ ) . '/class-fw-forms-action-create-post.php';
+		require_once dirname( __FILE__ ) . '/class-fw-forms-action-sheets.php';
 
-		$actions = array( new FW_Forms_Action_Store() );
+		$actions = array( new FW_Forms_Action_Store(), new FW_Forms_Action_Autoresponder(), new FW_Forms_Action_Webhook(), new FW_Forms_Action_Create_Post(), new FW_Forms_Action_Sheets() );
 
 		/**
 		 * Register form actions. Append instances of FW_Forms_Action.
@@ -136,19 +141,14 @@ class FW_Forms_Actions {
 			return;
 		}
 
-		$values = isset( $data['form_values'] ) && is_array( $data['form_values'] ) ? $data['form_values'] : array();
-		$items  = isset( $data['shortcode_to_item'] ) && is_array( $data['shortcode_to_item'] ) ? $data['shortcode_to_item'] : array();
-		$fields = class_exists( 'FW_Forms_Entries_Capture' ) ? FW_Forms_Entries_Capture::fields_from_submission( $values, $items ) : array();
+		// A submission judged spam is kept as an entry for review, and nothing else happens.
+		if ( class_exists( 'FW_Forms_Spam_Filter' ) && FW_Forms_Spam_Filter::is_spam( $data['id'] ?? '' ) ) {
+			self::$entry_id = 0;
+			return;
+		}
 
-		$ctx = array(
-			'form_id'   => (string) ( $data['id'] ?? '' ),
-			'form_type' => (string) ( $data['type'] ?? '' ),
-			'form'      => $form,
-			'fields'    => $fields,
-			'email'     => class_exists( 'FW_Forms_Entries_Capture' ) ? FW_Forms_Entries_Capture::primary_email( $fields ) : '',
-			'entry_id'  => self::$entry_id,
-			'payload'   => $data,
-		);
+		$ctx             = self::context( $data, $form );
+		$ctx['entry_id'] = self::$entry_id;
 
 		self::$entry_id = 0;
 
@@ -182,6 +182,66 @@ class FW_Forms_Actions {
 				do_action( 'fw_ext_forms_action_ran', $id, $ctx );
 			}
 		}
+	}
+
+	/**
+	 * The context an action receives: the form's settings and the submitted fields as
+	 * entry-style rows (secret fields such as passwords are not among them; they are
+	 * only in the raw `payload`).
+	 *
+	 * @param array $data Submit-hook (or validation) payload.
+	 * @param array $form The form's saved settings.
+	 *
+	 * @return array
+	 */
+	public static function context( array $data, array $form ) {
+		$values = isset( $data['form_values'] ) && is_array( $data['form_values'] ) ? $data['form_values'] : array();
+		$items  = isset( $data['shortcode_to_item'] ) && is_array( $data['shortcode_to_item'] ) ? $data['shortcode_to_item'] : array();
+		$fields = class_exists( 'FW_Forms_Entries_Capture' ) ? FW_Forms_Entries_Capture::fields_from_submission( $values, $items ) : array();
+
+		return array(
+			'form_id'   => (string) ( $data['id'] ?? '' ),
+			'form_type' => (string) ( $data['type'] ?? '' ),
+			'form'      => $form,
+			'fields'    => $fields,
+			'email'     => class_exists( 'FW_Forms_Entries_Capture' ) ? FW_Forms_Entries_Capture::primary_email( $fields ) : '',
+			'entry_id'  => 0,
+			'payload'   => $data,
+		);
+	}
+
+	/**
+	 * @internal Each enabled action may refuse the submission before it is accepted.
+	 *
+	 * @param array $errors
+	 * @param array $data { id, type, shortcode_to_item, form_values }
+	 *
+	 * @return array
+	 */
+	public function _filter_validate( $errors, $data ) {
+		if ( ! empty( $errors ) || ! is_array( $data ) ) {
+			return $errors;
+		}
+		$form = self::form_settings( $data );
+		if ( ! $form ) {
+			return $errors;
+		}
+		$ctx = self::context( $data, $form );
+		foreach ( self::all() as $id => $action ) {
+			if ( ! $action->is_enabled( $form ) ) {
+				continue;
+			}
+			try {
+				$message = $action->validate( $ctx );
+			} catch ( \Throwable $e ) {
+				$message = null; // a broken check never blocks a visitor
+			}
+			if ( is_string( $message ) && '' !== $message ) {
+				$errors[ 'action-' . $id ] = $message;
+				break;
+			}
+		}
+		return $errors;
 	}
 
 	/**

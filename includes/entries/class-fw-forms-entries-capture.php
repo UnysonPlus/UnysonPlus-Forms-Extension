@@ -101,6 +101,8 @@ class FW_Forms_Entries_Capture {
 			'fields'     => $fields,
 			'ip'         => 'yes' === self::setting( 'entries_store_ip', 'no' ) ? self::client_ip() : '',
 			'user_agent' => isset( $_SERVER['HTTP_USER_AGENT'] ) ? substr( sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ), 0, 255 ) : '',
+			'user_id'    => get_current_user_id(),
+			'raw_values' => self::raw_values( $items ),
 		);
 
 		/**
@@ -142,6 +144,26 @@ class FW_Forms_Entries_Capture {
 	 *
 	 * @return array [ { id, type, label, value }, … ]
 	 */
+	public static function secret_types() {
+		/**
+		 * Field types whose value is a secret (a password): never stored in Entries,
+		 * never included in the notification email, never given to form actions as a
+		 * field. An action that needs one reads it from the raw submit payload.
+		 *
+		 * @param string[] $types
+		 */
+		return array_map( 'strval', (array) apply_filters( 'fw_ext_forms_secret_field_types', array() ) );
+	}
+
+	/**
+	 * Entry-style rows from a submission (see fields_from_submission below).
+	 *
+	 * @param array $values
+	 * @param array $items
+	 * @param array $uploads
+	 *
+	 * @return array
+	 */
 	public static function fields_from_submission( array $values, array $items, array $uploads = array() ) {
 		$out = array();
 
@@ -154,8 +176,9 @@ class FW_Forms_Entries_Capture {
 
 			$type = isset( $item['type'] ) ? (string) $item['type'] : '';
 
-			// Anti-spam plumbing is not a field the person filled in.
-			if ( in_array( $type, array( 'honeypot', 'recaptcha', 'form-header-title' ), true ) ) {
+			// Anti-spam plumbing is not a field the person filled in, and a secret
+			// (a password) must never be stored, emailed or handed to actions.
+			if ( in_array( $type, array( 'honeypot', 'recaptcha', 'turnstile', 'hcaptcha', 'form-header-title', 'section', 'page-break' ), true ) || in_array( $type, self::secret_types(), true ) ) {
 				continue;
 			}
 
@@ -173,8 +196,13 @@ class FW_Forms_Entries_Capture {
 				$row['purpose'] = sanitize_key( (string) ( $item['options']['purpose'] ?? '' ) );
 			}
 
+			// A rating keeps its scale, so results can tell an NPS question (0-10) from stars.
+			if ( 'rating' === $type ) {
+				$row['scale'] = sanitize_key( (string) ( $item['options']['scale'] ?? 'stars5' ) );
+			}
+
 			// The stored file's name, so the entry screen can offer it for download.
-			if ( 'file-upload' === $type && ! empty( $uploads[ $shortcode ]['file'] ) ) {
+			if ( in_array( $type, array( 'file-upload', 'signature' ), true ) && ! empty( $uploads[ $shortcode ]['file'] ) ) {
 				$row['file'] = basename( (string) $uploads[ $shortcode ]['file'] );
 			}
 
@@ -220,6 +248,28 @@ class FW_Forms_Entries_Capture {
 	 *
 	 * @return string
 	 */
+	/**
+	 * The answers as the form posted them (for "edit my entry"), without passwords, files, signatures
+	 * or spam checks.
+	 *
+	 * @param array $items shortcode => item
+	 * @return array shortcode => raw value
+	 */
+	public static function raw_values( array $items ) {
+		$skip = array_merge( self::secret_types(), array( 'file-upload', 'signature', 'recaptcha', 'turnstile', 'hcaptcha', 'honeypot', 'form-header-title', 'section', 'page-break', 'calculation' ) );
+		$out  = array();
+		foreach ( $items as $sc => $item ) {
+			if ( in_array( $item['type'] ?? '', $skip, true ) ) {
+				continue;
+			}
+			$v = FW_Request::POST( (string) $sc );
+			if ( null !== $v && '' !== $v && array() !== $v ) {
+				$out[ (string) $sc ] = map_deep( $v, 'sanitize_textarea_field' );
+			}
+		}
+		return $out;
+	}
+
 	public static function primary_email( array $fields ) {
 		$fallback = '';
 
@@ -250,7 +300,7 @@ class FW_Forms_Entries_Capture {
 	 *
 	 * @return string
 	 */
-	private static function form_title( array $data ) {
+	public static function form_title( array $data ) {
 		$form_id = (string) ( $data['id'] ?? '' );
 
 		/**
@@ -314,10 +364,16 @@ class FW_Forms_Entries_Capture {
 	 * @internal
 	 */
 	public function _action_retention() {
-		$days = (int) self::setting( 'entries_retention_days', 0 );
+		$site = (int) self::setting( 'entries_retention_days', 0 );
 
-		if ( $days > 0 ) {
-			FW_Forms_Entries::delete_older_than( $days );
+		// A form's own period (Settings → Options → "Delete entries after") wins over the site-wide one.
+		foreach ( array_keys( FW_Forms_Entries::forms() ) as $form_id ) {
+			$form = class_exists( 'FW_Forms_Actions' ) ? FW_Forms_Actions::form_settings( array( 'id' => (string) $form_id, 'type' => 'contact-forms' ) ) : array();
+			$own  = (int) ( $form['retention_days'] ?? 0 );
+			$days = $own > 0 ? $own : $site;
+			if ( $days > 0 ) {
+				FW_Forms_Entries::delete_older_than( $days, (string) $form_id );
+			}
 		}
 	}
 

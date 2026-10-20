@@ -310,8 +310,11 @@ class FW_Option_Type_Form_Builder extends FW_Option_Type_Builder {
 				continue;
 			}
 
+			// The item and every posted value ride along (since 2.0.74): a price, a formula or a
+			// quantity's unit price lives in the item's options, not in what was posted. Items that
+			// declare only `$value` simply ignore them.
 			$values[ $shortcode ] = isset( $input_values[ $shortcode ] )
-				? $item_types[ $item['type'] ]->get_value_from_item( $input_values[ $shortcode ] )
+				? $item_types[ $item['type'] ]->get_value_from_item( $input_values[ $shortcode ], $item, $input_values )
 				: null;
 
 			if ( isset( $item['_items'] ) && is_array( $item['_items'] ) ) {

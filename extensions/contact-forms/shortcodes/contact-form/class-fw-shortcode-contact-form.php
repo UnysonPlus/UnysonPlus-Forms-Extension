@@ -39,6 +39,11 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 	{
 		$atts = is_array($atts) ? $atts : array();
 
+		// A saved form (Unyson+ → Forms) supplies the fields and settings; the element keeps its style.
+		if ( class_exists( 'FW_Forms_Library' ) ) {
+			$atts = FW_Forms_Library::apply_to_atts( $atts );
+		}
+
 		$form_data = array(
 			'id'              => $atts['id']              ?? '',
 			'form'            => $atts['form']            ?? array(),
@@ -60,6 +65,15 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 		 * it has no save action and we can't access it by id (we don't know in which post it is)
 		 */
 		$extension->_set_form_db_data($form_data['id'], $atts);
+
+		// Closed (a date, an entry limit): the message instead of the form. The settings above are saved
+		// first, so a submission from a page opened before the form closed is checked against them.
+		if ( class_exists( 'FW_Forms_Limits' ) && '' !== FW_Forms_Limits::closed_reason( $atts, (string) $form_data['id'] ) ) {
+			return '<div class="fw-form-closed" role="status"><p>' . esc_html( FW_Forms_Limits::closed_message( $atts ) ) . '</p></div>';
+		}
+		if ( class_exists( 'FW_Forms_Limits' ) ) {
+			$atts['_seats'] = FW_Forms_Limits::seats( (string) $form_data['id'], $atts );
+		}
 
 		$html = $extension->render(
 			array(
@@ -100,6 +114,13 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 
 		$attr         = sc_build_wrapper_attr( $wrap_atts );
 		$unique_class = function_exists( 'sc_element_unique_class' ) ? sc_element_unique_class( $wrap_atts ) : '';
+
+		// Form Style preset (Theme Settings → Components → Form Styles). A style that no longer
+		// exists is dropped, so the form falls back to the plain field look.
+		$form_style = isset( $atts['form_style'] ) ? (string) $atts['form_style'] : '';
+		if ( class_exists( 'FW_Forms_Style_Presets' ) && FW_Forms_Style_Presets::is_valid( $form_style ) ) {
+			$attr['class'] = trim( ( isset( $attr['class'] ) ? $attr['class'] : '' ) . ' ' . $form_style );
+		}
 		$scoped_css   = ( $unique_class !== '' ) ? $this->build_scoped_css( '.' . $unique_class, $atts ) : '';
 		$attr_html    = function_exists( 'fw_attr_to_html' ) ? fw_attr_to_html( $attr ) : '';
 
@@ -133,9 +154,12 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 			$css  .= $sel . '{max-width:' . esc_attr( $max ) . ';' . $mx . '}';
 		}
 
-		// Field appearance — inputs / textarea / select (never the submit button).
-		$fields = $sel . ' input:not([type=submit]):not([type=button]):not([type=checkbox]):not([type=radio]),'
-			. $sel . ' textarea,' . $sel . ' select';
+		// Field appearance — inputs / textarea / select (never the submit button). These one-off
+		// overrides must beat a Form Style preset (`.formp-x .wrap-forms input:not()×4`, 0,6,1) and
+		// its focus rule (0,7,1) wherever the stylesheets load, hence the repeated class.
+		$hi     = $sel . $sel . $sel . ' .wrap-forms';
+		$input  = ' input:not([type=submit]):not([type=button]):not([type=checkbox]):not([type=radio])';
+		$fields = $hi . $input . ',' . $hi . ' textarea,' . $hi . ' select';
 		$fd = '';
 		if ( ( $v = $col( $atts['field_bg'] ?? '' ) ) !== '' )     { $fd .= 'background:' . $v . ';'; }
 		if ( ( $v = $col( $atts['field_text'] ?? '' ) ) !== '' )   { $fd .= 'color:' . $v . ';'; }
@@ -147,12 +171,12 @@ class FW_Shortcode_Contact_Form extends FW_Shortcode
 
 		// Focus / accent.
 		if ( ( $v = $col( $atts['field_focus'] ?? '' ) ) !== '' ) {
-			$css .= $sel . ' input:focus,' . $sel . ' textarea:focus,' . $sel . ' select:focus{border-color:' . $v . ';outline-color:' . $v . ';}';
+			$css .= $hi . $input . ':focus,' . $hi . ' textarea:focus,' . $hi . ' select:focus{border-color:' . $v . ';outline-color:' . $v . ';}';
 		}
 
-		// Labels.
+		// Labels (beats a preset's main-label rule, 0,4,2).
 		if ( ( $v = $col( $atts['label_color'] ?? '' ) ) !== '' ) {
-			$css .= $sel . ' label{color:' . $v . ';}';
+			$css .= $sel . $hi . ' label{color:' . $v . ';}';
 		}
 
 		// NOTE: the submit button is styled with the theme's Button presets

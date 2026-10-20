@@ -63,6 +63,9 @@ class FW_Forms_Entries_List_Table extends WP_List_Table {
 			'search'    => isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'date_from' => isset( $_GET['from'] ) ? sanitize_text_field( wp_unslash( $_GET['from'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'date_to'   => isset( $_GET['to'] ) ? sanitize_text_field( wp_unslash( $_GET['to'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'starred'   => ! empty( $_GET['starred'] ) ? 1 : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'assigned'  => ! empty( $_GET['mine'] ) ? get_current_user_id() : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'approval'  => ! empty( $_GET['approve'] ) ? 'pending' : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'orderby'   => isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'created_at', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'order'     => $order,
 		);
@@ -73,14 +76,30 @@ class FW_Forms_Entries_List_Table extends WP_List_Table {
 	 * ---------------------------------------------------------------------- */
 
 	public function get_columns() {
-		return array(
+		/**
+		 * Filters the entries list columns. A column added here is filled through the
+		 * `fw_ext_forms_entries_column` filter.
+		 */
+		return apply_filters( 'fw_ext_forms_entries_columns', array(
 			'cb'         => '<input type="checkbox" />',
 			'email'      => __( 'From', 'fw' ),
 			'summary'    => __( 'Summary', 'fw' ),
 			'form_title' => __( 'Form', 'fw' ),
 			'status'     => __( 'Status', 'fw' ),
 			'created_at' => __( 'Submitted', 'fw' ),
-		);
+		) );
+	}
+
+	/**
+	 * A column added by another part of Forms (or another extension).
+	 *
+	 * @param object $item
+	 * @param string $column
+	 * @return string
+	 */
+	protected function column_default( $item, $column ) {
+		/** Filters the HTML of an added entries column. */
+		return (string) apply_filters( 'fw_ext_forms_entries_column', '', $column, $item );
 	}
 
 	public function get_sortable_columns() {
@@ -193,6 +212,23 @@ class FW_Forms_Entries_List_Table extends WP_List_Table {
 			);
 		}
 
+		// Follow-up views: starred, and the ones assigned to the person looking.
+		$f = $this->filters();
+		$follow = array( 'starred' => array( __( 'Starred', 'fw' ), array( 'starred' => 1 ), 'starred' ), 'mine' => array( __( 'Assigned to me', 'fw' ), array( 'assigned' => get_current_user_id() ), 'assigned' ), 'approve' => array( __( 'To approve', 'fw' ), array( 'approval' => 'pending' ), 'approval' ) );
+		foreach ( $follow as $key => $view ) {
+			list( $label, $args, $flag ) = $view;
+			$count = FW_Forms_Entries::query( array_merge( $args, array( 'form_id' => $form_id, 'per_page' => 1 ) ) )['total'];
+			if ( 'approve' === $key && ! $count && empty( $f['approval'] ) ) {
+				continue; // only when something waits
+			}
+			$url   = add_query_arg( array( $key => 1 ), remove_query_arg( array( 'status', 'starred', 'mine', 'approve' ), $base ) );
+			if ( '' !== $form_id ) {
+				$url = add_query_arg( 'form_id', rawurlencode( $form_id ), $url );
+			}
+			$on            = ! empty( $f[ $flag ] );
+			$views[ $key ] = sprintf( '<a href="%s"%s>%s <span class="count">(%d)</span></a>', esc_url( $url ), $on ? ' class="current" aria-current="page"' : '', esc_html( $label ), $count );
+		}
+
 		return $views;
 	}
 
@@ -223,6 +259,8 @@ class FW_Forms_Entries_List_Table extends WP_List_Table {
 		return array(
 			'read'    => __( 'Mark as read', 'fw' ),
 			'archive' => __( 'Archive', 'fw' ),
+			'spam'     => __( 'Mark as spam', 'fw' ),
+			'not_spam' => __( 'Not spam', 'fw' ),
 			'delete'  => __( 'Delete permanently', 'fw' ),
 		);
 	}
