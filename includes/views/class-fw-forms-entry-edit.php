@@ -29,7 +29,7 @@ class FW_Forms_Entry_Edit {
 	}
 
 	/** Whether the current person may edit this entry now ('' = yes, else why not). */
-	public static function refusal( $entry, array $form = null ) {
+	public static function refusal( $entry, ?array $form = null ) {
 		$form = null === $form ? FW_Forms_Approval::form( $entry->form_id ) : $form;
 		if ( 'yes' !== ( $form['edit_own'] ?? 'no' ) ) {
 			return __( 'This form\'s entries cannot be edited.', 'fw' );

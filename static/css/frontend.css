@@ -131,10 +131,14 @@
 }
 
 .wrap-forms sup {
-	font-size: 16px;
-	color: #c0392b;
-	top: 0;
+	/* The required-field asterisk: sized to the label and centred on its text, not raised as a superscript. */
+	font-size: .85em;
+	line-height: 0;
+	vertical-align: middle;
+	position: relative;
+	top: -.05em;
 	left: 2px;
+	color: #c0392b;
 }
 
 .wrap-forms input,
@@ -509,7 +513,7 @@ body.rtl .wrap-forms .field-columns-3 .field-column {
 /* Consent field — a single checkbox whose label may carry a link (privacy policy). */
 .wrap-forms .field-consent { margin: 0 0 1rem; }
 .wrap-forms .field-consent label { display: flex; gap: .6rem; align-items: flex-start; font-weight: 400; cursor: pointer; }
-.wrap-forms .field-consent input[type="checkbox"] { width: auto; height: auto; min-height: 0; padding: 0; margin: .3em 0 0; flex: 0 0 auto; }
+.wrap-forms .field-consent input[type="checkbox"] { width: 1.05em; height: 1.05em; min-height: 0; padding: 0; margin: calc((1lh - 1.05em) / 2) 0 0; line-height: inherit; flex: 0 0 auto; } /* centred on the first line of the text */
 .wrap-forms .field-consent label span { flex: 1 1 auto; width: auto; }
 .wrap-forms .field-consent a { text-decoration: underline; }
 
@@ -608,6 +612,8 @@ form.fw_form_fw_form.fw-form--sending [type="submit"] { cursor: progress; opacit
 @media (prefers-reduced-motion: reduce) { .fw-form-steps__bar span { transition: none; } }
 /* A step's rows are hidden with the `hidden` attribute; the grid row's own display must not win. */
 .wrap-forms > [hidden], form.fw_form_fw_form .sc-cf-submit[hidden] { display: none !important; }
+/* Room between the last field and the submit button. */
+form.fw_form_fw_form .sc-cf-submit { margin-top: 1rem; }
 
 /* Range, picture choices, ranking, survey grid (2.0.71) */
 .wrap-forms fieldset.field-image-choice, .wrap-forms fieldset.field-ranking, .wrap-forms fieldset.field-likert { border: 0; padding: 0; margin: 0 0 1rem; min-width: 0; }

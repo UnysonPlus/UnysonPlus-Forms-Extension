@@ -84,7 +84,7 @@ class FW_Forms_Action_Sheets extends FW_Forms_Action {
 		return (string) $body['access_token'];
 	}
 
-	private static function api( $method, $url, $token, array $body = null ) {
+	private static function api( $method, $url, $token, ?array $body = null ) {
 		$args = array( 'method' => $method, 'timeout' => 15, 'headers' => array( 'Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json' ) );
 		if ( null !== $body ) {
 			$args['body'] = wp_json_encode( $body );

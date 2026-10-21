@@ -341,7 +341,7 @@ $manifest['description'] = __(
 	'fw'
 );
 
-$manifest['version']     = '2.0.85';
+$manifest['version']     = '2.0.87';
 $manifest['display']     = true;
 $manifest['standalone']  = true;
 

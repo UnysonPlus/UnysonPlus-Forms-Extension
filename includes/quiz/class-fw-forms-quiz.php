@@ -170,7 +170,7 @@ class FW_Forms_Quiz {
 	}
 
 	/** The result for the form being sent in this request, or null when it is not a quiz. */
-	public static function current( array $form = null ) {
+	public static function current( ?array $form = null ) {
 		if ( null !== self::$result ) {
 			return self::$result ? self::$result : null;
 		}
