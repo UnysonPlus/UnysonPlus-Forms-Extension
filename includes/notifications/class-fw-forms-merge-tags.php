@@ -39,6 +39,11 @@ class FW_Forms_Merge_Tags {
 				continue;
 			}
 			$tags[ (string) $key ] = self::flatten( $value );
+			// The field's own tag name (Field Name in its settings) answers too.
+			$alias = self::tag_of( isset( $items[ $key ] ) ? $items[ $key ] : array() );
+			if ( $alias !== '' && ! isset( $tags[ $alias ] ) ) {
+				$tags[ $alias ] = $tags[ (string) $key ];
+			}
 		}
 
 		$lines = array();
@@ -79,6 +84,12 @@ class FW_Forms_Merge_Tags {
 			}
 			return $v;
 		}, $text );
+	}
+
+	/** A builder item's tag name (options.tag), cleaned to letters, numbers, _ and -; '' when unset. */
+	public static function tag_of( $item ) {
+		$tag = isset( $item['options']['tag'] ) ? trim( (string) $item['options']['tag'], ' {}' ) : '';
+		return preg_replace( '/[^a-zA-Z0-9_\-]/', '', $tag );
 	}
 
 	/** A submitted value as one line of text. */

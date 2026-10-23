@@ -90,14 +90,21 @@
 		if (box) { box.parentNode.removeChild(box); }
 	}
 
+	/** The form asks for its messages under the Send button (Settings → Messages: below the form). */
+	function messagesBelow(form) {
+		var w = form.closest ? form.closest('[data-fw-messages]') : null;
+		return !!(w && w.getAttribute('data-fw-messages') === 'below');
+	}
+
 	function resultBoxOf(form, create) {
-		var prev = form.previousElementSibling;
-		if (prev && prev.classList.contains('fw-form-result')) { return prev; }
+		var below = messagesBelow(form);
+		var near = below ? form.nextElementSibling : form.previousElementSibling;
+		if (near && near.classList.contains('fw-form-result')) { return near; }
 		if (!create) { return null; }
 		var box = document.createElement('div');
 		box.className = 'fw-form-result';
 		box.setAttribute('tabindex', '-1');
-		form.parentNode.insertBefore(box, form);
+		form.parentNode.insertBefore(box, below ? form.nextSibling : form);
 		return box;
 	}
 
@@ -158,7 +165,7 @@
 			});
 			loose.forEach(function (m) { html += '<li>' + m + '</li>'; });
 			summary.innerHTML = html + '</ul>';
-			form.insertBefore(summary, form.firstChild);
+			if (messagesBelow(form)) { form.appendChild(summary); } else { form.insertBefore(summary, form.firstChild); }
 			target = summary;
 		} else if (items.length === 1) {
 			// One problem: its message is announced through the field it describes.

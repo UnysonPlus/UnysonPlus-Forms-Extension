@@ -85,11 +85,20 @@ abstract class FW_Option_Type_Form_Builder_Item extends FW_Option_Type_Builder_I
 	 * @since 2.0.23
 	 */
 	final protected function get_extra_options() {
-		$extra = array();
+		$extra = array(
+			// The field's tag for emails and messages, e.g. {your_name}. The builder script moves this row
+			// under Label, fills it from the label and keeps it unique; the field id stays as it was.
+			'tag' => array(
+				'type'  => 'text',
+				'label' => __( 'Field Name', 'fw' ),
+				'desc'  => __( 'Filled in from the label. Type it without braces; use it as {name} in the subject, messages and emails. Letters, numbers and _ only. Left empty, the automatic field id still works as its tag.', 'fw' ),
+				'value' => '',
+			),
+		);
 
 		if ($extra_options = $this->locate_path( '/options/options.php', false )) {
 			$extra_options = fw_get_variables_from_file($extra_options, array('options' => array()));
-			$extra = (array) $extra_options['options'];
+			$extra = array_merge( $extra, (array) $extra_options['options'] );
 		}
 
 		// Conditional visibility ("show only when…") for every field type, added

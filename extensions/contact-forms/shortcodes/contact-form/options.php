@@ -129,6 +129,23 @@ $options = array(
 									),
 								)
 							),
+							'email-from-group' => array(
+								'type' => 'group',
+								'options' => array(
+									'email_from_name' => array(
+										'type'  => 'text',
+										'label' => __( 'From Name', 'fw' ),
+										'desc'  => __( 'The sender name the notification shows, e.g. {your_name} via {site_name}. Answer tags work here. Leave empty to use the Mailer sender name; the address is always the site address.', 'fw' ),
+										'value' => '',
+									),
+									'email_body' => array(
+										'type'  => 'textarea',
+										'label' => __( 'Message Body', 'fw' ),
+										'desc'  => __( 'The text of the notification email. Answer tags work here: {all_fields} lists every answer. Leave empty for the standard table of answers.', 'fw' ),
+										'value' => '',
+									),
+								),
+							),
 							'submit-button-group' => array(
 								'type' => 'group',
 								'options' => array(
@@ -159,6 +176,16 @@ $options = array(
 											'hide'    => __( 'Show the message instead of the form', 'fw' ),
 											'page'    => __( 'Go to a page', 'fw' ),
 											'url'     => __( 'Go to an address', 'fw' ),
+										),
+									),
+									'messages_position' => array(
+										'type'    => 'select',
+										'label'   => __( 'Messages Appear', 'fw' ),
+										'desc'    => __( 'Where the "sent" message and any problems with the form show: above the form, or under the Send button.', 'fw' ),
+										'value'   => 'above',
+										'choices' => array(
+											'above' => __( 'Above the form', 'fw' ),
+											'below' => __( 'Below the Send button', 'fw' ),
 										),
 									),
 									'confirmation_page' => array(

@@ -115,7 +115,7 @@ if ( ! function_exists( 'fw_ext_forms_ai_register' ) ) :
 
 		fw_ai_register_ability( 'forms-add', array(
 			'label'       => __( 'Add a contact form to a page', 'fw' ),
-			'description' => 'Adds a contact form to a page: start from a starter (see forms_describe) and / or give fields [{ type, label, required?, width?, choices?, …type options }]; title adds a heading field at the top. email_to receives submissions (default: the site admin email), subject / submit_text / success_message / failure_message set the texts (subject may use Dynamic Content tokens such as {{post_title}}). store (default true) keeps every submission under Form Entries. subscribe { list (a CRM list slug), tags? (tag names or slugs), name_field? (the label of the field holding the name) } adds people who tick a newsletter consent field to the CRM; give the form a consent field (type consent, purpose newsletter) for it. Placed at the page root in its own section unless parent_path names a layout item. Works in the builder panel (unsaved until Update) and on saved pages (a revision first; undo restores). The form starts working once its page has been viewed.',
+			'description' => 'Adds a contact form to a page: start from a starter (see forms_describe) and / or give fields [{ type, label, required?, width?, choices?, …type options }]; title adds a heading field at the top. email_to receives submissions (default: the site admin email), subject / submit_text / success_message / failure_message set the texts (subject may use Dynamic Content tokens such as {{post_title}}). store (default true) keeps every submission under Form Entries. subscribe { list (a CRM list slug), tags? (tag names or slugs), name_field? (the label of the field holding the name) } adds people who tick a newsletter consent field to the CRM as newsletter subscribers; give the form a consent field (type consent, purpose newsletter) for it. crm { add_contact (true: every sender with an email address becomes a CRM contact, not subscribed), create? (deal | task | case: each submission also opens a deal in the sales pipeline, a task, or a support case), pipeline? (pipeline name or id, for deals; default the default pipeline), task_type? (todo | call | meeting | email), tags? } is the "Add to the CRM" form action and needs no consent field, because it never subscribes anyone. Placed at the page root in its own section unless parent_path names a layout item. Works in the builder panel (unsaved until Update) and on saved pages (a revision first; undo restores). The form starts working once its page has been viewed.',
 			'input'       => array(
 				'post_id'         => array( 'type' => 'integer' ),
 				'starter'         => array( 'type' => 'string' ),
@@ -128,6 +128,7 @@ if ( ! function_exists( 'fw_ext_forms_ai_register' ) ) :
 				'failure_message' => array( 'type' => 'string' ),
 				'store'           => array( 'type' => 'boolean', 'default' => true ),
 				'subscribe'       => array( 'type' => 'object' ),
+				'crm'             => array( 'type' => 'object' ),
 				'parent_path'     => array( 'type' => 'string' ),
 				'position'        => array( 'type' => 'integer', 'minimum' => 0 ),
 			),
@@ -188,6 +189,30 @@ if ( ! function_exists( 'fw_ext_forms_ai_register' ) ) :
 				$errors[] = 'subscribe.list must be the slug of an existing CRM list (create it with crm_save_lists).';
 			}
 		}
+		$crm = isset( $in['crm'] ) && is_array( $in['crm'] ) ? $in['crm'] : null;
+		$crm_pipeline = 0;
+		if ( $crm ) {
+			$create = (string) ( $crm['create'] ?? '' );
+			if ( ! class_exists( 'FW_CRM_Lists' ) || ! fw_ext( 'crm' ) ) {
+				$errors[] = 'crm needs the CRM extension active.';
+			} elseif ( 'deal' === $create && ! class_exists( 'FW_CRM_Pipelines' ) ) {
+				$errors[] = 'crm.create "deal" needs the Sales pipeline module on (CRM > Modules).';
+			} elseif ( 'case' === $create && ! class_exists( 'FW_CRM_Cases' ) ) {
+				$errors[] = 'crm.create "case" needs the Support cases module on (CRM > Modules).';
+			} elseif ( '' !== $create && ! in_array( $create, array( 'deal', 'task', 'case' ), true ) ) {
+				$errors[] = 'crm.create must be deal, task or case.';
+			}
+			if ( 'deal' === $create && class_exists( 'FW_CRM_Pipelines' ) && ! empty( $crm['pipeline'] ) ) {
+				foreach ( FW_CRM_Pipelines::all() as $pl ) {
+					if ( (string) $pl->id === (string) $crm['pipeline'] || 0 === strcasecmp( $pl->name, (string) $crm['pipeline'] ) ) {
+						$crm_pipeline = (int) $pl->id;
+					}
+				}
+				if ( ! $crm_pipeline ) {
+					$errors[] = 'crm.pipeline does not match a pipeline (create it with crm_save_pipeline).';
+				}
+			}
+		}
 		if ( $errors ) {
 			return new WP_Error( 'fw_forms_ai_invalid', 'Nothing was changed: ' . implode( ' | ', array_slice( $errors, 0, 20 ) ) );
 		}
@@ -214,6 +239,19 @@ if ( ! function_exists( 'fw_ext_forms_ai_register' ) ) :
 			$atts['action_subscribe_list'] = sanitize_key( (string) $subscribe['list'] );
 			$atts['action_subscribe_tags'] = implode( ', ', array_map( 'sanitize_text_field', $tags ) );
 			$atts['action_subscribe_name'] = sanitize_text_field( (string) ( $subscribe['name_field'] ?? '' ) );
+		}
+		if ( $crm ) {
+			$atts['action_crm_contact'] = empty( $crm['add_contact'] ) && ! isset( $crm['create'] ) ? 'no' : 'yes';
+			$atts['action_crm_create']  = (string) ( $crm['create'] ?? '' );
+			if ( $crm_pipeline ) {
+				$atts['action_crm_pipeline'] = (string) $crm_pipeline;
+			}
+			if ( ! empty( $crm['task_type'] ) ) {
+				$atts['action_crm_task_type'] = sanitize_key( (string) $crm['task_type'] );
+			}
+			if ( ! empty( $crm['tags'] ) && empty( $atts['action_subscribe_tags'] ) ) {
+				$atts['action_subscribe_tags'] = implode( ', ', array_map( 'sanitize_text_field', (array) $crm['tags'] ) );
+			}
 		}
 		$form = array( 'type' => 'contact-form', 'atts' => $atts, '_items' => array() );
 

@@ -302,10 +302,20 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 			return self::confirmation( $form, $tag );
 		}
 
+		// Settings → Texts: a sender name and a written message body, both with answer tags.
+		$from_name = trim( wp_strip_all_tags( $tag( (string) ( $form['email_from_name'] ?? '' ), 'text' ) ) );
+		if ( '' !== $from_name ) {
+			$entry_data['from_name'] = str_replace( array( "\r", "\n", '<', '>', '"' ), '', $from_name );
+		}
+		$body_text = trim( (string) ( $form['email_body'] ?? '' ) );
+		$body      = '' !== $body_text
+			? wpautop( $tag( esc_html( $body_text ), 'html' ) )
+			: $this->render_view( 'email', $entry_data );
+
 		$result = fw_ext_mailer_send_mail(
 			$to,
 			$subject,
-			$this->render_view( 'email', $entry_data ),
+			$body,
 			$entry_data
 		);
 
