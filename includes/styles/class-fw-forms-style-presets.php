@@ -611,7 +611,7 @@ class FW_Forms_Style_Presets {
 		if ( trim( $custom ) !== '' ) {
 			$custom  = preg_replace( '#</?(style|script)[^>]*>#i', '', $custom );
 			$custom  = str_replace( array( '<', '>' ), '', $custom );
-			$rules[] = str_replace( '{{SELECTOR}}', $s, $custom );
+			$rules[] = function_exists( 'unysonplus_scope_preset_css' ) ? unysonplus_scope_preset_css( $custom, $s ) : str_replace( '{{SELECTOR}}', $s, $custom );
 		}
 
 		return implode( "\n", $rules ) . "\n";
