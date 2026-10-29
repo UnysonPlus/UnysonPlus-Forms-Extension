@@ -30,7 +30,7 @@ class FW_Forms_Action_Store extends FW_Forms_Action {
 		return array(
 			'action_store' => $this->switch_option(
 				__( 'Keep every submission as an entry', 'fw' ),
-				__( 'Listed under Unyson+ → Form Entries, searchable and exportable. Stored even if the email fails to send. The global switch under Forms → Settings can turn this off for the whole site.', 'fw' ),
+				__( 'Listed under Unyson+ → Forms → Entries, searchable and exportable. Stored even if the email fails to send. The global switch under Forms → Settings can turn this off for the whole site.', 'fw' ),
 				true
 			),
 		);

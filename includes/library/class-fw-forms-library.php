@@ -75,7 +75,12 @@ class FW_Forms_Library {
 			),
 			'public'              => false,
 			'show_ui'             => true,
-			'show_in_menu'        => 'fw-extensions',
+			// Forms is a content app (the consolidated Forms screen), so it sits at the
+			// TOP LEVEL beside the other apps (CRM, Membership, Visitor Insights, SEO)
+			// rather than inside the Unyson+ (developer / site-config) menu.
+			'show_in_menu'        => true,
+			'menu_icon'           => 'dashicons-feedback',
+			'menu_position'       => 28,
 			'show_in_nav_menus'   => false,
 			'show_in_admin_bar'   => false,
 			'exclude_from_search' => true,

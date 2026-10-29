@@ -3,7 +3,7 @@
 }
 
 /**
- * Survey results: Unyson+ → Form Results (`admin.php?page=fw-form-results&form_id=…&period=…`).
+ * Survey results: Unyson+ → Forms → Results (`admin.php?page=fw-form-results&form_id=…&period=…`).
  *
  * Built from the stored entries (spam left out), field by field, with what each kind of answer needs:
  *   choices (dropdown, single / multiple choice, picture choices, consent, payment method)
@@ -178,6 +178,7 @@ class FW_Forms_Reports {
 		$periods = array( 0 => __( 'All time', 'fw' ), 30 => __( 'Last 30 days', 'fw' ), 90 => __( 'Last 90 days', 'fw' ), 365 => __( 'Last 12 months', 'fw' ) );
 		?>
 		<div class="wrap fw-results">
+			<?php FW_Forms_Admin_Nav::render( 'results' ); ?>
 			<style>
 				.fw-results__head { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 1rem 0 1.5rem; }
 				.fw-results__cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }

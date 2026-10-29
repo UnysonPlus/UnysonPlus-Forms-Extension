@@ -259,7 +259,7 @@ $options = array(
 					'entries_store' => array(
 						'type'         => 'switch',
 						'label'        => __( 'Store submissions', 'fw' ),
-						'desc'         => __( 'Keep every form submission as an entry you can search, read and export under Unyson+ → Form Entries. Emails are still sent as before; this is in addition, not instead — and an entry is stored even if the email fails to send.', 'fw' ),
+						'desc'         => __( 'Keep every form submission as an entry you can search, read and export under Unyson+ → Forms → Entries. Emails are still sent as before; this is in addition, not instead — and an entry is stored even if the email fails to send.', 'fw' ),
 						'value'        => 'yes',
 						'left-choice'  => array( 'value' => 'no',  'label' => __( 'No', 'fw' ) ),
 						'right-choice' => array( 'value' => 'yes', 'label' => __( 'Yes', 'fw' ) ),

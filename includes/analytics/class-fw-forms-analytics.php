@@ -4,7 +4,7 @@
 
 /**
  * Form analytics: per form and day, how many saw the form, started it, sent it and gave up — and the
- * field people were on when they gave up. Shown on Unyson+ → Form Results.
+ * field people were on when they gave up. Shown on Unyson+ → Forms → Results.
  *
  *   views / starts / abandons  static/js/track.js: a view once per page load when half the form is on
  *                              screen, a start at the first answer, an abandon when the page is left with

@@ -393,6 +393,9 @@ class FW_Forms_Entries_Admin {
 		}
 
 		echo '<div class="wrap fw-ext-forms-entries">';
+		if ( class_exists( 'FW_Forms_Admin_Nav' ) ) {
+			FW_Forms_Admin_Nav::render( 'entries' );
+		}
 
 		if ( isset( $_GET['entry'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$this->render_single( (int) $_GET['entry'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended

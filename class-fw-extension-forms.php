@@ -123,6 +123,8 @@ class FW_Extension_Forms extends FW_Extension {
 		if ( is_admin() ) {
 			require_once dirname( __FILE__ ) . '/includes/reports/class-fw-forms-reports.php';
 			FW_Forms_Reports::init();
+			require_once dirname( __FILE__ ) . '/includes/admin/class-fw-forms-admin-nav.php';
+			FW_Forms_Admin_Nav::init();
 		}
 
 		// Form Styles presets: Theme Settings → Components → Form Styles, and their CSS in the
