@@ -264,16 +264,16 @@ class FW_Option_Type_Form_Builder_Item_Number extends FW_Option_Type_Form_Builde
 						}
 						break;
 					case 'value':
-						if ( $constraint_data['min'] === '' || ! preg_match( $this->number_regex,
-								$constraint_data['min'] )
+						if ( ! isset( $constraint_data['min'] ) || $constraint_data['min'] === '' || ! preg_match( $this->number_regex,
+								(string) $constraint_data['min'] )
 						) {
 							$constraint_data['min'] = null;
 						} else {
 							$constraint_data['min'] = doubleval( $constraint_data['min'] );
 						}
 
-						if ( $constraint_data['max'] === '' || ! preg_match( $this->number_regex,
-								$constraint_data['max'] )
+						if ( ! isset( $constraint_data['max'] ) || $constraint_data['max'] === '' || ! preg_match( $this->number_regex,
+								(string) $constraint_data['max'] )
 						) {
 							$constraint_data['max'] = null;
 						} else {
