@@ -48,6 +48,8 @@ class FW_Extension_Contact_Forms extends FW_Extension_Forms_Form {
 		// The title names the FORM, so it stays the same for every entry: answer tags and Dynamic
 		// Content tokens in the subject are dropped rather than filled in.
 		$name = trim( preg_replace( array( '/\{\{[^}]*\}\}/', '/\{[a-zA-Z0-9_\-]+\}/', '/\s{2,}/' ), array( '', '', ' ' ), (string) $form['subject_message'] ) );
+		// What separated the tags goes with them: "Contact: {topic}, {area}" names the form "Contact".
+		$name = trim( preg_replace( array( '/\(\s*[,;:·|\-–—\s]*\)/u', '/(\s*[,;:·|\-–—]\s*){2,}/u', '/^[\s,;:·|\-–—]+|[\s,;:·|\-–—]+$/u' ), array( '', ' - ', '' ), $name ) );
 
 		return '' !== $name ? $name : $title;
 	}
