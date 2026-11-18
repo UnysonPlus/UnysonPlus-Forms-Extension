@@ -59,6 +59,12 @@ class FW_Forms_Coupons {
 	public static function check( $code ) {
 		$code = strtoupper( trim( (string) $code ) );
 		$all  = self::all();
+		if ( '' !== $code && ! isset( $all[ $code ] ) ) {
+			$shared = self::shared( $code );
+			if ( null !== $shared ) {
+				return $shared;
+			}
+		}
 		if ( '' === $code || ! isset( $all[ $code ] ) || $all[ $code ]['amount'] <= 0 ) {
 			return __( 'That code is not valid.', 'fw' );
 		}
@@ -70,6 +76,41 @@ class FW_Forms_Coupons {
 			return __( 'That code has been used up.', 'fw' );
 		}
 		return $c;
+	}
+
+	/**
+	 * A code from the shared Payments list, in this class's shape. Only while Forms takes its
+	 * payments through the shared system (that is where its uses are counted). A code limited to
+	 * particular products or plans does not work in a form; one limited to Forms as a whole does.
+	 *
+	 * @return array|string|null The coupon, why it cannot be used, or null when there is no such code.
+	 */
+	private static function shared( $code ) {
+		if ( ! class_exists( 'FW_Payments_Coupons' ) || ! class_exists( 'FW_Forms_Gateway_Bridge' ) || ! FW_Forms_Gateway_Bridge::uses_shared() || ! FW_Payments_Coupons::find( $code ) ) {
+			return null;
+		}
+		$user = wp_get_current_user();
+		$c    = FW_Payments_Coupons::check( $code, array(
+			'source'   => 'forms',
+			'currency' => FW_Forms_Money::currency(),
+			'customer' => $user->ID ? array( 'user_id' => (int) $user->ID, 'email' => (string) $user->user_email ) : array(),
+		) );
+		if ( is_wp_error( $c ) ) {
+			return $c->get_error_message();
+		}
+		return array(
+			'code'     => $c['code'],
+			'type'     => $c['type'],
+			'amount'   => $c['amount'],
+			// Forms shows two cases; "the first months" bills like the first payment only on the form,
+			// and the provider applies the months.
+			'duration' => 'forever' === $c['duration'] ? 'forever' : 'once',
+			'expires'  => '',
+			'max_uses' => 0,
+			'shared'   => true,
+			'repeat'   => $c['duration'],
+			'months'   => $c['months'],
+		);
 	}
 
 	/** The amount off a sum. */

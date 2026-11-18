@@ -30,6 +30,9 @@ class FW_Forms_Payments {
 	public static function init() {
 		self::maybe_install();
 		require_once dirname( __FILE__ ) . '/gateways/class-fw-forms-gateway.php';
+		// New payments through the shared Payments extension, when the site chose it.
+		require_once dirname( __FILE__ ) . '/class-fw-forms-gateway-bridge.php';
+		FW_Forms_Gateway_Bridge::listen();
 		add_filter( 'fw_ext_forms_actions', array( __CLASS__, '_register_action' ), 5 );
 		add_filter( 'fw_ext_forms_merge_tags', array( __CLASS__, '_merge_tags' ), 10, 2 );
 		add_filter( 'fw_ext_forms_entries_columns', array( __CLASS__, '_columns' ) );
@@ -435,13 +438,20 @@ class FW_Forms_Payments {
 					$list[ $g->get_id() ] = $g;
 				}
 			}
+			$list = FW_Forms_Gateway_Bridge::wrap( $list );
+			// Before every extension has loaded, Payments may not be there yet: build the list again later.
+			if ( ! did_action( 'fw_extensions_init' ) ) {
+				$now  = $list;
+				$list = null;
+				return $now;
+			}
 		}
 		return $list;
 	}
 
 	public static function gateway( $id ) {
 		$all = self::gateways();
-		return $all[ $id ] ?? null;
+		return $all[ $id ] ?? FW_Forms_Gateway_Bridge::resolve( $id );
 	}
 
 	/** @internal */

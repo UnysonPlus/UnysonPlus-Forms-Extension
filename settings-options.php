@@ -153,6 +153,13 @@ $options = array(
 			'group_payments' => array(
 				'type'    => 'group',
 				'options' => array(
+					'payments_engine'   => array(
+						'type'    => 'select',
+						'label'   => __( 'Payment system', 'fw' ),
+						'desc'    => __( 'Who takes NEW form payments (and booking deposits). The shared Payments system has one set of provider keys and one list of payments for the whole site, set up in Payments → Settings, and adds local methods such as GCash. Payments and subscriptions that already exist stay on the system they were made on, so keep the keys below for them.', 'fw' ),
+						'value'   => '',
+						'choices' => array( '' => __( 'Automatic: the shared Payments system when it is switched on, unless Forms has payment keys or payments of its own', 'fw' ), 'own' => __( 'Forms’ own payment settings (below)', 'fw' ), 'payments' => __( 'The shared Payments system', 'fw' ) ),
+					),
 					'payments_currency' => array(
 						'type'    => 'select',
 						'label'   => __( 'Currency', 'fw' ),

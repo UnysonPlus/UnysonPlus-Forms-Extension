@@ -383,6 +383,31 @@ Files: `includes/payments/` (`class-fw-forms-money.php`, `-formula.php`, `-order
   `api-m.sandbox.paypal.com` (the session URL = the success URL) runs the whole round trip in a browser; never leave
   it installed.
 
+## Payments: two sides, one interface (2.0.99)
+
+While the shared **Payments** extension is active, every gateway is wrapped in `FW_Forms_Gateway_Bridge`
+(`includes/payments/class-fw-forms-gateway-bridge.php`). It is a router, not a replacement:
+
+- **New payments** follow Forms Settings → Payments → *Payment system* (`payments_engine`: `''` Automatic |
+  `own` | `payments`; `FW_Forms_Gateway_Bridge::uses_shared()`). Automatic = the shared system when Payments
+  is active and Forms has no payment set-up of its own (`has_own_setup()`: its keys, Membership's keys it
+  borrows, or a payment already taken its own way). Forms never switches Payments on by itself in Automatic:
+  a contact-form site must not load it.
+- **Existing records stay on the side they were made on**: a payment row with `meta.pay_charge` is a shared
+  charge, a subscription row with `meta.pay_subscription` a shared subscription; everything else is the
+  wrapped gateway's. Never move one.
+- The rest of Forms, and Bookings, keep talking to `FW_Forms_Gateway`, `FW_Forms_Payments` and
+  `FW_Forms_Subscriptions` only. Do not call `FW_Payments*` from anywhere but the bridge.
+- The bridge hears Payments' hooks and makes the same `set_status()` / `renewal()` calls the gateways make;
+  "Mark paid / cancelled / refunded" on an entry goes the other way (`_form_status`). `self::$asking` stops
+  a change from being sent back where it came from.
+- Methods only Payments has are bridges with no wrapped gateway, id `pay_<provider>_<method>`
+  (`is_extra()`); `FW_Forms_Payments::gateway()` resolves one even after its method is switched off, so an
+  old payment can still be refunded.
+- A code from the shared coupon list (`FW_Forms_Coupons::check()` → `shared()`) is counted by Payments, not
+  by Forms' own use counter.
+- Forms' own keys and webhook address keep serving what was sold before the switch: never remove them.
+
 ## Limits, signatures, webhook and create-post (2.0.77, Phase 7 first batch)
 
 - **Textarea options arrive with `<br />`** for line breaks (the page builder encodes them in the element atts).

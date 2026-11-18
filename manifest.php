@@ -5,6 +5,17 @@ $manifest = array();
 /**
  * Changelog
  * -----------------------------------------------------------------------------
+ * 2.0.99 - Forms (and booking deposits, which are paid through Forms) can take payments through
+ *          the shared Payments system. Forms Settings, Payments, "Payment system": Automatic
+ *          (the shared system once it is switched on, unless Forms has payment keys or payments
+ *          of its own), Forms' own settings, or the shared system. Only NEW payments follow the
+ *          choice; payments and subscriptions that exist stay where they were made. On the
+ *          shared system a form can also offer the methods of the other providers (GCash, Maya,
+ *          iDEAL and so on): the Payment Method field has a new "Local payment methods" tick,
+ *          and a Coupon field accepts codes from the shared coupon list. Done by
+ *          FW_Forms_Gateway_Bridge, which wraps each gateway; the rest of Forms and Bookings
+ *          still talk to FW_Forms_Gateway, FW_Forms_Payments and FW_Forms_Subscriptions.
+ *
  * 2.0.85 - One form style for every form on the site (Forms roadmap Phase 1, last task). Form
  *          Styles presets now reach the Newsletter element (its new Form Style option: the
  *          design's own fields, the site's default style, or any preset) and Membership's login
@@ -341,7 +352,7 @@ $manifest['description'] = __(
 	'fw'
 );
 
-$manifest['version']     = '2.0.98';
+$manifest['version']     = '2.0.99';
 $manifest['display']     = true;
 $manifest['standalone']  = true;
 

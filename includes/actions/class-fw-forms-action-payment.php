@@ -26,6 +26,9 @@ class FW_Forms_Action_Payment extends FW_Forms_Action {
 	public function get_options() {
 		$methods = array();
 		foreach ( FW_Forms_Payments::gateways() as $id => $g ) {
+			if ( $g instanceof FW_Forms_Gateway_Bridge && $g->is_extra() && ! FW_Forms_Gateway_Bridge::uses_shared() ) {
+				continue;
+			}
 			$methods[ $id ] = $g->get_title();
 		}
 		return array(
@@ -36,7 +39,7 @@ class FW_Forms_Action_Payment extends FW_Forms_Action {
 			'action_payment_method'               => array(
 				'type'    => 'select',
 				'label'   => __( 'Payment method', 'fw' ),
-				'desc'    => __( 'Card and PayPal need their keys in Forms Settings → Payments (or in Membership → Payments). To let the payer choose, add a Payment Method field to the form.', 'fw' ),
+				'desc'    => __( 'Card and PayPal need their keys in Forms Settings → Payments (or in Membership → Payments), or in Payments → Settings when the shared Payments system is in use. To let the payer choose, add a Payment Method field to the form.', 'fw' ),
 				'value'   => 'offline',
 				'choices' => $methods,
 			),

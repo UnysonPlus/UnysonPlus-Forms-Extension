@@ -37,7 +37,7 @@ class FW_Option_Type_Form_Builder_Item_Payment_Method extends FW_Option_Type_For
 								'label'   => __( 'Offer', 'fw' ),
 								'desc'    => __( 'Methods without keys in Forms Settings → Payments are left out on the site.', 'fw' ),
 								'value'   => array( 'stripe' => true, 'offline' => true ),
-								'choices' => array( 'stripe' => __( 'Card (Stripe)', 'fw' ), 'paypal' => __( 'PayPal', 'fw' ), 'offline' => __( 'Pay later', 'fw' ) ),
+								'choices' => array( 'stripe' => __( 'Card (Stripe)', 'fw' ), 'paypal' => __( 'PayPal', 'fw' ), 'offline' => __( 'Pay later', 'fw' ), 'shared' => __( 'Local payment methods (GCash, Maya and the others switched on in Payments → Settings; needs the shared Payments system)', 'fw' ) ),
 							),
 						),
 						array( 'stripe_label' => array( 'type' => 'text', 'label' => __( 'Card: label', 'fw' ), 'value' => __( 'Card', 'fw' ) ) ),
@@ -63,6 +63,14 @@ class FW_Option_Type_Form_Builder_Item_Payment_Method extends FW_Option_Type_For
 			if ( $g && $g->is_ready() ) {
 				$label      = trim( (string) ( $o[ $id . '_label' ] ?? '' ) );
 				$out[ $id ] = '' !== $label ? $label : $g->get_title();
+			}
+		}
+		// The shared Payments system's other methods, each under its own name.
+		if ( in_array( 'shared', $chosen, true ) && class_exists( 'FW_Forms_Payments' ) && class_exists( 'FW_Forms_Gateway_Bridge' ) && FW_Forms_Gateway_Bridge::uses_shared() ) {
+			foreach ( FW_Forms_Payments::gateways() as $id => $g ) {
+				if ( $g instanceof FW_Forms_Gateway_Bridge && $g->is_extra() && $g->is_ready() ) {
+					$out[ $id ] = $g->get_title();
+				}
 			}
 		}
 		return $out;
